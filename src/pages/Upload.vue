@@ -8,20 +8,26 @@
 				:file-name="fileName[index]"
 				:file-size="fileSize[index]"
 				:upload-percentage="progressCount"/>
+		
+		<Button class="mx-auto w-80 block" v-if="showDoneButton" @click="previewFiles">Done</Button>
 	</div>
 </template>
 
 <script lang="ts">
 import FileUploadStatus from "../components/FileUploadStatus.vue";
-import {inject, reactive, toRefs} from "vue";
+import {computed, inject, reactive, toRefs} from "vue";
 import {ref as storageRef, uploadBytesResumable} from "@firebase/storage";
-import {storage} from "../firebase";
+import {storage, database} from "../firebase";
 import {InjectFileListType} from "../types";
+import {addDoc, collection} from "firebase/firestore";
+import Button from "../elements/Button.vue"
+import {useRouter} from "vue-router";
 
 export default {
 	name: "Upload",
-	components: {FileUploadStatus},
+	components: {FileUploadStatus, Button},
 	setup() {
+		const router = useRouter();
 		const canvasFiles = inject("canvasFiles") as InjectFileListType;
 		const canvasFilesUploadProgress = reactive({
 			progress: [] as Array<number>,
@@ -37,8 +43,18 @@ export default {
 			return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
 		}
 		
+		let documentId = "";
+		
+		const writeData = async (fileNames: Array<string>) => {
+			try {
+				const dbCollection = collection(database, "links");
+				return await addDoc(dbCollection, {fileNames})
+			} catch (e) {
+				console.error("Error adding document: ", e);
+			}
+		}
+		
 		if (canvasFiles.value.length) {
-			
 			Array.from(canvasFiles.value).forEach((file, key) => {
 				canvasFilesUploadProgress.progress[key] = 0;
 				canvasFilesUploadProgress.fileName[key] = file.name;
@@ -54,10 +70,24 @@ export default {
 				canvasFilesUploadProgress.progress[key] = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
 			}
 			
+			writeData(canvasFilesUploadProgress.fileName)
+					.then((response: any) => {
+						documentId = response.id;
+					});
+		}
+		
+		const showDoneButton = computed(()=>{
+			return canvasFilesUploadProgress.progress.every((item)=> item === 100)
+		})
+		
+		const previewFiles = () => {
+			router.push({ name: 'preview', params: { documentId } })
 		}
 		
 		return {
-			...toRefs(canvasFilesUploadProgress)
+			...toRefs(canvasFilesUploadProgress),
+			showDoneButton,
+			previewFiles
 		}
 	}
 }
