@@ -20,12 +20,9 @@
 <script setup lang="ts">
 import {computed, inject} from "vue";
 import FileUploadButton from "../../elements/FileUploadButton.vue";
+import {InjectFileListType} from "../../types";
 
-interface InjectFiles {
-	value: FileList
-}
-
-const files = inject("files") as unknown as InjectFiles;
+const files = inject("files") as unknown as InjectFileListType;
 const changeCanvas = inject("changeCanvas");
 const addFiles = inject("addFiles") as any;
 

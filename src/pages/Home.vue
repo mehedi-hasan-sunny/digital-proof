@@ -7,7 +7,7 @@ import CanvasDraw from "../components/canvas/CanvasDraw.vue";
 const files = ref([] as unknown as FileList);
 const lastDeletedIndex = ref(-1);
 
-const addFiles = (imageFiles: FileList) => {
+const addFiles = (imageFiles: FileList): void => {
 	files.value = [...files.value, ...imageFiles] as unknown as FileList
 }
 

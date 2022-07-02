@@ -36,10 +36,7 @@ import FileInfo from "./FileInfo.vue";
 import CanvasPreview from "./CanvasPreview.vue";
 import Button from "../../elements/Button.vue";
 import CanvasSideButton from "./CanvasSideButton.vue";
-
-interface InjectFiles {
-	value: FileList
-}
+import {InjectFileListType} from "../../types";
 
 interface RefCanvasElement {
 	value: HTMLCanvasElement
@@ -64,10 +61,10 @@ export default {
 		
 		const imageSize: ImageSizeType = reactive({width: 0, height: 0});
 		
-		const files = inject("files") as unknown as InjectFiles;
+		const files = inject("files") as unknown as InjectFileListType;
 		const lastDeletedIndex = inject("lastDeletedIndex") as unknown as NumberRefType;
 		const deleteFile = inject("deleteFile");
-		const canvasFiles = inject("canvasFiles") as unknown as InjectFiles;
+		const canvasFiles = inject("canvasFiles") as unknown as InjectFileListType;
 		
 		
 		const canvasDraw = (file: File, newCanvas = null as unknown as HTMLCanvasElement) => {
@@ -146,9 +143,9 @@ export default {
 					canvasFiles.value = [...canvasFiles.value, canvasFile] as unknown as FileList;
 				})
 			});
-			nextTick(() => {
+			setTimeout(() => {
 				router.push("/upload");
-			})
+			}, 500)
 		}
 		onMounted(() => {
 			if (files.value.length) {
