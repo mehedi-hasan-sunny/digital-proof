@@ -9,24 +9,29 @@
 	
 	<div class="flex justify-between items-center gap-3 mb-3">
 		<button @click.prevent="slideAction('left')">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-left" viewBox="0 0 16 16">
-				<path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-left"
+			     viewBox="0 0 16 16">
+				<path fill-rule="evenodd"
+				      d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
 			</svg>
 		</button>
 		
 		<canvas-preview/>
 		
 		<button @click.prevent="slideAction('right')">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16">
-				<path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right"
+			     viewBox="0 0 16 16">
+				<path fill-rule="evenodd"
+				      d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
 			</svg>
 		</button>
 	</div>
-	<Button class="w-80 mb-3">Upload</Button>
+	<Button class="w-80 mb-3" @click="uploadFiles">Upload</Button>
 </template>
 
 <script lang="ts">
-import {inject, onMounted, reactive, ref, computed, provide, watch} from "vue";
+import {inject, onMounted, reactive, ref, computed, provide, watch, nextTick} from "vue";
+import {useRouter} from "vue-router";
 import FileInfo from "./FileInfo.vue";
 import CanvasPreview from "./CanvasPreview.vue";
 import Button from "../../elements/Button.vue";
@@ -53,23 +58,21 @@ export default {
 	name: "CanvasDraw",
 	components: {CanvasSideButton, CanvasPreview, FileInfo, Button},
 	setup() {
-		
+		const router = useRouter();
 		const canvas = ref(null) as unknown as RefCanvasElement;
-		
-		const files = inject("files") as unknown as InjectFiles;
+		const currentImageIndex: NumberRefType = ref(0);
 		
 		const imageSize: ImageSizeType = reactive({width: 0, height: 0});
 		
-		const currentImageIndex: NumberRefType = ref(0);
-		
+		const files = inject("files") as unknown as InjectFiles;
 		const lastDeletedIndex = inject("lastDeletedIndex") as unknown as NumberRefType;
-		
 		const deleteFile = inject("deleteFile");
+		const canvasFiles = inject("canvasFiles") as unknown as InjectFiles;
 		
 		
-		const canvasDraw = (file: File) => {
-			
-			const ctx = canvas.value.getContext("2d") as unknown as CanvasRenderingContext2D;
+		const canvasDraw = (file: File, newCanvas = null as unknown as HTMLCanvasElement) => {
+			let canvasEl = newCanvas ?? canvas.value;
+			const ctx = canvasEl.getContext("2d") as unknown as CanvasRenderingContext2D;
 			
 			const image: HTMLImageElement = new Image();
 			
@@ -83,30 +86,28 @@ export default {
 			reader.readAsDataURL(file);
 			
 			image.onload = function () {
-				canvas.value.width = imageSize.width = image.width;
-				canvas.value.height = imageSize.height = image.height;
+				canvasEl.width = image.width;
+				canvasEl.height = image.height;
+				
+				if (!newCanvas) {
+					imageSize.width = image.width;
+					imageSize.height = image.height;
+				}
 				
 				//draw background image
-				ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, canvas.value.width, canvas.value.height);
+				ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, image.width, image.height);
 				
 				ctx.beginPath();
-				// canvas.moveTo(10, 10);
+				// canvasEl.moveTo(10, 10);
 				const bleed = 0.125 * 96;
 				ctx.strokeStyle = "#FF0000";
-				ctx.strokeRect(bleed, bleed, canvas.value.width - bleed * 2, canvas.value.height - bleed * 2);
+				ctx.strokeRect(bleed, bleed, image.width - bleed * 2, image.height - bleed * 2);
 				ctx.strokeStyle = "#0000FF";
-				ctx.strokeRect(bleed * 2, bleed * 2, canvas.value.width - bleed * 4, canvas.value.height - bleed * 4);
+				ctx.strokeRect(bleed * 2, bleed * 2, image.width - bleed * 4, image.height - bleed * 4);
 				ctx.fill();
 				ctx.stroke();
 			};
 		}
-		
-		onMounted(() => {
-			if (files.value.length) {
-				currentImageIndex.value = 0;
-				changeCanvas();
-			}
-		})
 		
 		const imageSizeInch = computed(() => {
 			return {
@@ -136,6 +137,26 @@ export default {
 			canvasDraw(files.value[currentImageIndex.value])
 		}
 		
+		const uploadFiles = () => {
+			Array.from(files.value).forEach((file) => {
+				const canvas: HTMLCanvasElement = document.createElement('canvas');
+				canvasDraw(files.value[0], canvas);
+				canvas.toBlob((blob: any) => {
+					const canvasFile = new File([blob], file.name);
+					canvasFiles.value = [...canvasFiles.value, canvasFile] as unknown as FileList;
+				})
+			});
+			nextTick(() => {
+				router.push("/upload");
+			})
+		}
+		onMounted(() => {
+			if (files.value.length) {
+				currentImageIndex.value = 0;
+				changeCanvas();
+			}
+		})
+		
 		watch(lastDeletedIndex, function (newValue: any) {
 			if (newValue > -1) {
 				if (currentImageIndex.value === newValue) {
@@ -158,7 +179,8 @@ export default {
 			slideAction,
 			changeCanvas,
 			deleteFile,
-			currentImageIndex
+			currentImageIndex,
+			uploadFiles
 		}
 	}
 }

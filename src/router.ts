@@ -8,10 +8,12 @@ const router = createRouter({
     routes: [
         {
             path: "/",
+            name: "home",
             component: Home
         },
         {
             path: "/upload",
+            name: "upload",
             component: Upload
         }
     ]

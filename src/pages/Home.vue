@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import DragNDrop from '../components/DragNDrop.vue'
-import {ref, provide, watch} from "vue";
+import {ref, provide, watch, onMounted, inject} from "vue";
 import CanvasDraw from "../components/canvas/CanvasDraw.vue";
 
 
@@ -15,6 +15,8 @@ const deleteFile = (deleteIndex: number) => {
 	lastDeletedIndex.value = deleteIndex
 	files.value = Array.from(files.value).filter((item, index) => index !== deleteIndex) as unknown as FileList
 }
+const canvasFiles = inject("canvasFiles") as any;
+
 
 provide('files', files)
 provide('addFiles', addFiles)
@@ -22,9 +24,10 @@ provide('deleteFile', deleteFile)
 provide('lastDeletedIndex', lastDeletedIndex)
 
 
-watch(files, function (newValue) {
-	console.log(newValue)
+onMounted(() => {
+	canvasFiles.value = [] as unknown as FileList;
 })
+
 </script>
 
 <template>
