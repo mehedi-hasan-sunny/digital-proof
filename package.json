@@ -1,10 +1,11 @@
 {
   "name": "digital-proof",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.3",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "build-tsc": "vue-tsc --noEmit --skipLibCheck && vite build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {

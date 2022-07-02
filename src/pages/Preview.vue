@@ -11,7 +11,11 @@
 				<div class="inline-flex items-center" style="min-height: 25rem">
 					<img class="block border border-gray-500 ml-20 max-w-full" :src="fileStats.img.src" style="max-height: 25rem"/>
 				</div>
-				<canvas-side-button :currentImageIndex="currentImageIndex"/>
+				<canvas-side-button
+						:current-image-index="currentImageIndex"
+						:is-shareable="true"
+						:link="fullPath"
+				/>
 			</div>
 			
 			<div class="flex justify-between items-center gap-3 mb-3">
@@ -33,7 +37,7 @@ import {getDoc} from "@firebase/firestore"
 import {doc} from "firebase/firestore";
 import FileInfo from "../components/canvas/FileInfo.vue";
 import CanvasPreview from "../components/canvas/CanvasPreview.vue"
-import {reactive, ref} from "vue";
+import {computed, reactive, ref} from "vue";
 import DirectionButton from "../elements/DirectionButton.vue";
 import CanvasSideButton from "../components/canvas/CanvasSideButton.vue";
 import NotFound from "./404.vue"
@@ -44,7 +48,7 @@ export default {
 	
 	async setup() {
 		const route = useRoute();
-		
+		console.log(route)
 		const fileStats = reactive({
 			img: {} as any,
 			height: 0,
@@ -62,7 +66,6 @@ export default {
 			const docData = await getDoc(docRef);
 			fileNames = await docData.data();
 			
-			console.log(fileNames)
 			if (fileNames) {
 				console.log(fileNames,"kjhg")
 				
@@ -104,12 +107,17 @@ export default {
 			}
 		}
 		
+		const fullPath = computed(()=>{
+			return window.location.origin + route.fullPath
+		})
+		
 		return {
 			fileStats,
 			imageLinks,
 			changeImageSrc,
 			slideAction,
-			currentImageIndex
+			currentImageIndex,
+			fullPath
 		}
 	}
 }

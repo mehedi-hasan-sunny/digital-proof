@@ -1,6 +1,6 @@
 <template>
 	<div class="w-5/12 mx-auto min-w-min">
-		<object data="./src/assets/Rectangle.svg" type="" class="mx-auto my-4 h-52"></object>
+		<img src="../assets/Rectangle.svg" type="" class="mx-auto my-4 h-52"/>
 		
 		<file-upload-status
 				v-for="(progressCount, index) in progress"

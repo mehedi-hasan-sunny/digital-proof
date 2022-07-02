@@ -2,9 +2,11 @@
 	<file-info class="my-3 max-w-sm" :file-count="files.length" :file-height="imageSizeInch.height"
 	           :file-width="imageSizeInch.width"/>
 	
-	<div class="flex justify-center items-end gap-5 max-w-5xl mb-3" style="min-height: 25rem">
-		<canvas ref="canvas" class="block border border-gray-500 ml-20 max-w-full" style="max-height: 25rem"/>
-		<canvas-side-button :currentImageIndex="currentImageIndex"/>
+	<div class="flex justify-center items-end gap-5 max-w-5xl mb-3">
+		<div class="inline-flex items-center" style="min-height: 25rem">
+			<canvas ref="canvas" class="block border border-gray-500 ml-20 max-w-full" style="max-height: 25rem"/>
+		</div>
+		<canvas-side-button :current-image-index="currentImageIndex" :is-deletable="true"/>
 	</div>
 	
 	<div class="flex justify-between items-center gap-3 mb-3">
