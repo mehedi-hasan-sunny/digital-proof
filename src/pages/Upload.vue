@@ -29,17 +29,24 @@ export default {
 			fileSize: [] as Array<string>
 		});
 		
-		console.log(canvasFiles.value, "hello0")
+		
+		const bytesToSize = (bytes: number): string => {
+			const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+			if (bytes == 0) return '0 Byte';
+			const i = parseInt(String(Math.floor(Math.log(bytes) / Math.log(1024))));
+			return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
+		}
 		
 		if (canvasFiles.value.length) {
+			
 			Array.from(canvasFiles.value).forEach((file, key) => {
 				canvasFilesUploadProgress.progress[key] = 0;
 				canvasFilesUploadProgress.fileName[key] = file.name;
-				canvasFilesUploadProgress.fileSize[key] = file.size.toString();
+				canvasFilesUploadProgress.fileSize[key] = bytesToSize(file.size);
 				const fileStorageRef = storageRef(storage, `images/${file.name}`);
 				const uploadProcess = uploadBytesResumable(fileStorageRef, file);
 				uploadProcess.on("state_changed", (snapshot) => {
-					snapshotProgress(snapshot, key)
+					snapshotProgress(snapshot, key);
 				})
 			})
 			

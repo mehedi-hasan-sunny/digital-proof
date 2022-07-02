@@ -2,7 +2,7 @@
 	<file-info class="my-3 max-w-sm" :file-count="files.length" :file-height="imageSizeInch.height"
 	           :file-width="imageSizeInch.width"/>
 	
-	<div class="flex justify-center gap-5 max-w-5xl mb-3" style="min-height: 25rem">
+	<div class="flex justify-center items-end gap-5 max-w-5xl mb-3" style="min-height: 25rem">
 		<canvas ref="canvas" class="block border border-gray-500 ml-20 max-w-full" style="max-height: 25rem"/>
 		<canvas-side-button :currentImageIndex="currentImageIndex"/>
 	</div>
@@ -81,29 +81,37 @@ export default {
 				}
 			};
 			reader.readAsDataURL(file);
-			
-			image.onload = function () {
-				canvasEl.width = image.width;
-				canvasEl.height = image.height;
-				
-				if (!newCanvas) {
-					imageSize.width = image.width;
-					imageSize.height = image.height;
+			return new Promise((resolve, reject) => {
+				try {
+					image.onload = function () {
+						canvasEl.width = image.width;
+						canvasEl.height = image.height;
+						
+						if (!newCanvas) {
+							imageSize.width = image.width;
+							imageSize.height = image.height;
+						}
+						
+						//draw background image
+						ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, image.width, image.height);
+						
+						ctx.beginPath();
+						// canvasEl.moveTo(10, 10);
+						const bleed = 0.125 * 96;
+						ctx.strokeStyle = "#FF0000";
+						ctx.strokeRect(bleed, bleed, image.width - bleed * 2, image.height - bleed * 2);
+						ctx.strokeStyle = "#0000FF";
+						ctx.strokeRect(bleed * 2, bleed * 2, image.width - bleed * 4, image.height - bleed * 4);
+						ctx.fill();
+						ctx.stroke();
+						
+						resolve(canvasEl)
+					};
+				} catch (e) {
+					reject(e)
 				}
-				
-				//draw background image
-				ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, image.width, image.height);
-				
-				ctx.beginPath();
-				// canvasEl.moveTo(10, 10);
-				const bleed = 0.125 * 96;
-				ctx.strokeStyle = "#FF0000";
-				ctx.strokeRect(bleed, bleed, image.width - bleed * 2, image.height - bleed * 2);
-				ctx.strokeStyle = "#0000FF";
-				ctx.strokeRect(bleed * 2, bleed * 2, image.width - bleed * 4, image.height - bleed * 4);
-				ctx.fill();
-				ctx.stroke();
-			};
+			})
+			
 		}
 		
 		const imageSizeInch = computed(() => {
@@ -134,18 +142,40 @@ export default {
 			canvasDraw(files.value[currentImageIndex.value])
 		}
 		
-		const uploadFiles = () => {
-			Array.from(files.value).forEach((file) => {
-				const canvas: HTMLCanvasElement = document.createElement('canvas');
-				canvasDraw(files.value[0], canvas);
-				canvas.toBlob((blob: any) => {
-					const canvasFile = new File([blob], file.name);
-					canvasFiles.value = [...canvasFiles.value, canvasFile] as unknown as FileList;
-				})
-			});
-			setTimeout(() => {
+		
+		const makeFileFromCanvas = (drawnCanvas: any) => {
+			return new Promise((resolve, reject) => {
+				try {
+					drawnCanvas.toBlob((blob: any) => {
+						const canvasFile = new File([blob], drawnCanvas.title);
+						resolve(canvasFile);
+					})
+				} catch (e) {
+					reject(e)
+				}
+			})
+		}
+		
+		const uploadFiles = async () => {
+			const drawnCanvases = await Promise.all(
+					Array.from(files.value).map(async (file) => {
+						const canvas: HTMLCanvasElement = document.createElement('canvas');
+						canvas.title = file.name;
+						return await canvasDraw(file, canvas);
+					})
+			);
+			const canvasDrawnFiles = await Promise.all(
+					drawnCanvases.map(async (drawnCanvas: any) => {
+						return await makeFileFromCanvas(drawnCanvas);
+					})
+			);
+			
+			canvasFiles.value = canvasDrawnFiles as unknown as FileList;
+			
+			await nextTick(() => {
 				router.push("/upload");
-			}, 500)
+			});
+			
 		}
 		onMounted(() => {
 			if (files.value.length) {
@@ -173,10 +203,10 @@ export default {
 			files,
 			canvas,
 			imageSizeInch,
-			slideAction,
-			changeCanvas,
 			deleteFile,
 			currentImageIndex,
+			slideAction,
+			changeCanvas,
 			uploadFiles
 		}
 	}

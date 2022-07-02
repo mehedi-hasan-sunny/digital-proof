@@ -1,3 +1,3 @@
 export interface InjectFileListType {
-    value: FileList
+    value: Array<File> | FileList
 }
