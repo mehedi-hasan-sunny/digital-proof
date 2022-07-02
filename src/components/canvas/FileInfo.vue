@@ -1,0 +1,37 @@
+<template>
+	<div class="border border-gray-200 text-center rounded w-1/2 p-2 bg-white flex justify-between items-center">
+		<div class="w-full h-full border-r border-gray-300 inline-flex justify-center flex-col items-center">
+			<span class="text-xs font-medium mb-2">
+				Trim size of your file
+			</span>
+			<span class="font-bold">
+				{{ fileHeight }} x {{ fileWidth }}
+			</span>
+		</div>
+		<div class="w-full h-full inline-flex justify-center flex-col items-center min-h-min">
+			<span class="text-xs font-medium mb-2">
+				Pages of your file
+			</span>
+			<span class="font-bold">
+				{{ fileCount }}
+			</span>
+		</div>
+	</div>
+</template>
+
+<script>
+export default {
+	name: "FileInfo",
+	props: {
+		fileHeight: {
+			type: Number
+		},
+		fileWidth: {
+			type: Number
+		},
+		fileCount: {
+			type: Number
+		}
+	}
+}
+</script>
