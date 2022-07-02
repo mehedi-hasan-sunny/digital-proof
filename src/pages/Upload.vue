@@ -16,7 +16,7 @@
 <script lang="ts">
 import FileUploadStatus from "../components/FileUploadStatus.vue";
 import {computed, inject, reactive, toRefs} from "vue";
-import {ref as storageRef, uploadBytesResumable} from "@firebase/storage";
+import {ref as storageRef, uploadBytesResumable, getDownloadURL} from "@firebase/storage";
 import {storage, database} from "../firebase";
 import {InjectFileListType} from "../types";
 import {addDoc, collection} from "firebase/firestore";
@@ -61,10 +61,22 @@ export default {
 				canvasFilesUploadProgress.fileSize[key] = bytesToSize(file.size);
 				const fileStorageRef = storageRef(storage, `images/${file.name}`);
 				const uploadProcess = uploadBytesResumable(fileStorageRef, file);
-				uploadProcess.on("state_changed", (snapshot) => {
-					snapshotProgress(snapshot, key);
-				})
-			})
+				
+				uploadProcess.on("state_changed",
+						(snapshot) => {
+							snapshotProgress(snapshot, key);
+						},
+						(err: any) => {
+							console.log(err)
+						},
+						() => {
+							console.log('dlskjhgs')
+							getDownloadURL(uploadProcess.snapshot.ref).then((url) => {
+								console.log(url)
+								
+							})
+						});
+			});
 			
 			const snapshotProgress = (snapshot: any, key: number) => {
 				canvasFilesUploadProgress.progress[key] = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
@@ -76,12 +88,12 @@ export default {
 					});
 		}
 		
-		const showDoneButton = computed(()=>{
-			return canvasFilesUploadProgress.progress.every((item)=> item === 100)
+		const showDoneButton = computed(() => {
+			return canvasFilesUploadProgress.progress.every((item) => item === 100)
 		})
 		
 		const previewFiles = () => {
-			router.push({ name: 'preview', params: { documentId } })
+			router.push({name: 'preview', params: {documentId}})
 		}
 		
 		return {

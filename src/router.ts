@@ -2,6 +2,8 @@ import {createRouter, createWebHistory} from "vue-router";
 import Home from "./pages/Home.vue"
 
 const Upload = () => import(/* webpackChunkName: "upload" */ './pages/Upload.vue');
+const FilesPreview = () => import(/* webpackChunkName: "files-preview" */ './pages/FilesPreview.vue');
+const NotFound = () => import(/* webpackChunkName: "404" */ './pages/404.vue');
 
 const router = createRouter({
     history: createWebHistory(),
@@ -15,6 +17,16 @@ const router = createRouter({
             path: "/upload",
             name: "upload",
             component: Upload
+        },
+        {
+            path: "/preview/:documentId",
+            name: "preview",
+            component: FilesPreview
+        },
+        {
+            path: "/:pathMatch(.*)*",
+            name: "404",
+            component: NotFound
         }
     ]
 });
