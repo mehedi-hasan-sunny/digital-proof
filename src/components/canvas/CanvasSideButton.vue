@@ -1,7 +1,7 @@
 <template>
 	<div class="flex flex-col gap-5">
 		<div class="text-center">
-			<round-button class="text-violet-900">
+			<round-button class="text-violet-900" @click="downloadPdf">
 				<svg width="22" height="20" viewBox="0 0 22 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 					<path
 							d="M11 13V1M11 13L7 9M11 13L15 9M1 15L1.621 17.485C1.72915 17.9177 1.97882 18.3018 2.33033 18.5763C2.68184 18.8508 3.11501 18.9999 3.561 19H18.439C18.885 18.9999 19.3182 18.8508 19.6697 18.5763C20.0212 18.3018 20.2708 17.9177 20.379 17.485L21 15"
@@ -70,6 +70,9 @@
 <script lang="ts">
 import {inject, ref} from "vue";
 import RoundButton from "../../elements/RoundButton.vue";
+import * as pdfMake from "pdfmake/build/pdfmake";
+import {InjectFileListType} from "../../types";
+import {canvasDrawer} from "../../helpers/canvasDrawer";
 
 export default {
 	name: "CanvasSideButton",
@@ -90,6 +93,7 @@ export default {
 		}
 	},
 	setup(props: any) {
+		const files = inject("files") as unknown as InjectFileListType;
 		const deleteFile = inject("deleteFile");
 		const toast = ref(false);
 		const shareLink = () => {
@@ -99,14 +103,50 @@ export default {
 			}, 1800)
 		}
 		
+		const downloadPdf = async () => {
+			
+			const drawnCanvases = await Promise.all(
+					Array.from(files.value).map(async (file) => {
+						const canvas: HTMLCanvasElement = document.createElement('canvas');
+						canvas.title = file.name;
+						return await canvasDrawer(file, null, canvas);
+					})
+			);
+			
+			
+			// const base64Files = await Promise.all(Array.from(files.value).map((file) => {
+			// 	console.log(file)
+			// 	return fileToBase64(file)
+			// }))
+			
+			
+			const downloadContent = drawnCanvases.map((drawnCanvas: any) => {
+				return {
+					image: drawnCanvas.toDataURL("image/jpeg"),
+					width: 512,
+					ageBreak: 'after'
+				}
+			})
+			const makePDF = (<any>pdfMake).createPdf({content: downloadContent});
+			makePDF.download(`digital-proof-${(new Date().getTime())}`);
+		}
 		const closeToast = () => {
 			toast.value = false;
+		}
+		const fileToBase64 = (file: any) => {
+			return new Promise((resolve, reject) => {
+				const reader: any = new FileReader();
+				reader.readAsDataURL(file);
+				reader.onload = () => resolve(reader.result);
+				reader.onerror = (error: any) => reject(error);
+			});
 		}
 		return {
 			deleteFile,
 			shareLink,
 			toast,
-			closeToast
+			closeToast,
+			downloadPdf
 		}
 	}
 }

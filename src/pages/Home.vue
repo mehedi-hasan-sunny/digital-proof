@@ -2,9 +2,10 @@
 import DragNDrop from '../components/DragNDrop.vue'
 import {ref, provide, watch, onMounted, inject} from "vue";
 import CanvasDraw from "../components/canvas/CanvasDraw.vue";
+import {InjectFileListType} from "../types";
 
 
-const files = ref([] as unknown as FileList);
+const files = inject("files") as unknown as InjectFileListType;
 const lastDeletedIndex = ref(-1);
 
 const addFiles = (imageFiles: FileList): void => {
@@ -18,7 +19,7 @@ const deleteFile = (deleteIndex: number) => {
 const canvasFiles = inject("canvasFiles") as any;
 
 
-provide('files', files)
+
 provide('addFiles', addFiles)
 provide('deleteFile', deleteFile)
 provide('lastDeletedIndex', lastDeletedIndex)

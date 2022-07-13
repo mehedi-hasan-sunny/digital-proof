@@ -29,6 +29,7 @@ import Button from "../../elements/Button.vue";
 import CanvasSideButton from "./CanvasSideButton.vue";
 import {InjectFileListType} from "../../types";
 import DirectionButton from "../../elements/DirectionButton.vue";
+import {canvasDrawer, makeFileFromCanvas} from "../../helpers/canvasDrawer";
 
 interface RefCanvasElement {
 	value: HTMLCanvasElement
@@ -58,54 +59,6 @@ export default {
 		const deleteFile = inject("deleteFile");
 		const canvasFiles = inject("canvasFiles") as unknown as InjectFileListType;
 		
-		
-		const canvasDraw = (file: File, newCanvas = null as unknown as HTMLCanvasElement) => {
-			let canvasEl = newCanvas ?? canvas.value;
-			const ctx = canvasEl.getContext("2d") as unknown as CanvasRenderingContext2D;
-			
-			const image: HTMLImageElement = new Image();
-			
-			const reader = new FileReader();
-			
-			reader.onload = function () {
-				if (typeof reader.result === "string") {
-					image.src = reader.result;
-				}
-			};
-			reader.readAsDataURL(file);
-			return new Promise((resolve, reject) => {
-				try {
-					image.onload = function () {
-						canvasEl.width = image.width;
-						canvasEl.height = image.height;
-						
-						if (!newCanvas) {
-							imageSize.width = image.width;
-							imageSize.height = image.height;
-						}
-						
-						//draw background image
-						ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, image.width, image.height);
-						
-						ctx.beginPath();
-						// canvasEl.moveTo(10, 10);
-						const bleed = 0.125 * 96;
-						ctx.strokeStyle = "#FF0000";
-						ctx.strokeRect(bleed, bleed, image.width - bleed * 2, image.height - bleed * 2);
-						ctx.strokeStyle = "#0000FF";
-						ctx.strokeRect(bleed * 2, bleed * 2, image.width - bleed * 4, image.height - bleed * 4);
-						ctx.fill();
-						ctx.stroke();
-						
-						resolve(canvasEl)
-					};
-				} catch (e) {
-					reject(e)
-				}
-			})
-			
-		}
-		
 		const imageSizeInch = computed(() => {
 			return {
 				width: Number((imageSize.width / 96 - 0.125).toFixed(3)),
@@ -131,29 +84,22 @@ export default {
 			if (index > -1) {
 				currentImageIndex.value = index;
 			}
-			canvasDraw(files.value[currentImageIndex.value])
-		}
-		
-		
-		const makeFileFromCanvas = (drawnCanvas: any) => {
-			return new Promise((resolve, reject) => {
-				try {
-					drawnCanvas.toBlob((blob: any) => {
-						const canvasFile = new File([blob], drawnCanvas.title);
-						resolve(canvasFile);
+			canvasDrawer(files.value[currentImageIndex.value], canvas, undefined,
+					({width, height}: { width: number, height: number }) => {
+						imageSize.width = width;
+						imageSize.height = height;
 					})
-				} catch (e) {
-					reject(e)
-				}
-			})
 		}
+		
+		
+		
 		
 		const uploadFiles = async () => {
 			const drawnCanvases = await Promise.all(
 					Array.from(files.value).map(async (file) => {
 						const canvas: HTMLCanvasElement = document.createElement('canvas');
 						canvas.title = file.name;
-						return await canvasDraw(file, canvas);
+						return await canvasDrawer(file, null, canvas);
 					})
 			);
 			const canvasDrawnFiles = await Promise.all(

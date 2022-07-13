@@ -9,7 +9,8 @@
 			
 			<div class="flex justify-center items-end gap-5 max-w-5xl mb-3">
 				<div class="inline-flex items-center" style="min-height: 25rem">
-					<img class="block border border-gray-500 ml-20 max-w-full" :src="fileStats.img.src" style="max-height: 25rem"/>
+					<img class="block border border-gray-500 ml-20 max-w-full" :src="fileStats.img.src"
+					     style="max-height: 25rem"/>
 				</div>
 				<canvas-side-button
 						:current-image-index="currentImageIndex"
@@ -37,10 +38,11 @@ import {getDoc} from "@firebase/firestore"
 import {doc} from "firebase/firestore";
 import FileInfo from "../components/canvas/FileInfo.vue";
 import CanvasPreview from "../components/canvas/CanvasPreview.vue"
-import {computed, reactive, ref} from "vue";
+import {computed, inject, reactive, ref} from "vue";
 import DirectionButton from "../elements/DirectionButton.vue";
 import CanvasSideButton from "../components/canvas/CanvasSideButton.vue";
 import NotFound from "./404.vue"
+import {makeFileFromCanvas} from "../helpers/canvasDrawer";
 
 export default {
 	name: "Preview",
@@ -48,7 +50,11 @@ export default {
 	
 	async setup() {
 		const route = useRoute();
-		console.log(route)
+		const filesToBeDownloaded: any = ref([]);
+		const currentImageIndex = ref(0);
+		const imageLinks = ref([]) as any;
+		const files: any = inject("files");
+		
 		const fileStats = reactive({
 			img: {} as any,
 			height: 0,
@@ -60,35 +66,59 @@ export default {
 			return `https://firebasestorage.googleapis.com/v0/b/digital-proof-7e1ef.appspot.com/o/images%2F${fileName}?alt=media&token=c474eb67-fcd5-4067-bf40-cffad38bd780`
 		}
 		
-		let fileNames: any = [];
 		const getData = async () => {
 			const docRef = doc(database, "links/" + route.params.documentId);
 			const docData = await getDoc(docRef);
-			fileNames = await docData.data();
+			filesToBeDownloaded.value = await docData.data();
 			
-			if (fileNames) {
-				console.log(fileNames,"kjhg")
-				
-				fileStats.length = fileNames.fileNames.length;
+			if (filesToBeDownloaded.value) {
+				fileStats.length = filesToBeDownloaded.value.fileNames.length;
 				const img = new Image();
-				img.src = generateLink(fileNames.fileNames[0]);
+				img.src = generateLink(filesToBeDownloaded.value.fileNames[0]);
 				img.onload = () => {
 					fileStats.img = img;
 					fileStats.width = img.width
 					fileStats.height = img.height
 					fileStats.loading = false;
 				}
-			}
-			else{
+				
+				filesToBeDownloaded.value.files = filesToBeDownloaded.value.fileNames.map((fileName: string) => {
+					return new Promise((resolve, reject) => {
+						try {
+							const img2 = new Image();
+							img2.crossOrigin="anonymous"
+							img2.src = generateLink(fileName);
+							img2.onload = async () => {
+								const canvas = document.createElement("canvas");
+								canvas.width = img2.width;
+								canvas.height = img2.height;
+								const ctx: any = canvas.getContext("2d");
+								ctx.drawImage(img2, 0, 0);
+								resolve(canvas);
+							}
+						} catch (e) {
+							reject(e)
+						}
+					})
+				})
+				
+				const canvases = await Promise.all(filesToBeDownloaded.value.files);
+				
+				files.value = await Promise.all(
+						canvases.map(async (drawnCanvas: any) => {
+							return await makeFileFromCanvas(drawnCanvas);
+						})
+				);
+				
+			} else {
 				fileStats.loading = null;
 			}
 		}
 		
 		await getData()
 		
-		const currentImageIndex = ref(0);
-		const imageLinks = ref([]) as any;
-		imageLinks.value = fileNames?.fileNames.map((fileName: string) => generateLink(fileName)) ?? [];
+		
+		imageLinks.value = filesToBeDownloaded.value?.fileNames.map((fileName: string) => generateLink(fileName)) ?? [];
 		
 		const changeImageSrc = (index: number) => {
 			currentImageIndex.value = index;
@@ -107,7 +137,7 @@ export default {
 			}
 		}
 		
-		const fullPath = computed(()=>{
+		const fullPath = computed(() => {
 			return window.location.origin + route.fullPath
 		})
 		
