@@ -43,7 +43,7 @@ export default defineComponent({
 
 <template>
 	<div
-			class="border-2 border-violet-900 rounded-xl h-80 px-20 py-10 border-dashed bg-white flex flex-col justify-center items-center my-3"
+			class="border-2 border-violet-900 rounded-xl h-72 md:h-80 px-5 md:px-20 py-5 md:py-10 border-dashed bg-white flex flex-col justify-center items-center my-3"
 			@drop.prevent="dropImage"
 			@dragover="dragHandler" @dragend="dragHandler" @dragenter="dragHandler"
 			@drag="dragHandler" @dragleave="dragHandler" @dragstart="dragHandler">

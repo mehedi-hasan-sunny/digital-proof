@@ -1,5 +1,5 @@
 <template>
-	<file-info class="my-3 max-w-sm" :file-count="files.length" :file-height="imageSizeInch.height"
+	<file-info class="mb-4 md:mt-3 md:max-w-sm" :file-count="files.length" :file-height="imageSizeInch.height"
 	           :file-width="imageSizeInch.width"/>
 	
 	<div class="flex justify-center items-end gap-5 max-w-5xl mb-3">

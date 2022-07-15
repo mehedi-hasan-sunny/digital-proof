@@ -19,7 +19,7 @@ import {computed, inject, reactive, toRefs} from "vue";
 import {ref as storageRef, uploadBytesResumable, getDownloadURL} from "@firebase/storage";
 import {storage, database} from "../firebase";
 import {InjectFileListType} from "../types";
-import {addDoc, collection} from "firebase/firestore";
+import {addDoc, collection, serverTimestamp} from "firebase/firestore";
 import Button from "../elements/Button.vue"
 import {useRouter} from "vue-router";
 
@@ -48,7 +48,7 @@ export default {
 		const writeData = async (fileNames: Array<string>) => {
 			try {
 				const dbCollection = collection(database, "links");
-				return await addDoc(dbCollection, {fileNames})
+				return await addDoc(dbCollection, {fileNames, timestamp: serverTimestamp()})
 			} catch (e) {
 				console.error("Error adding document: ", e);
 			}
@@ -70,7 +70,6 @@ export default {
 							console.log(err)
 						},
 						() => {
-							console.log('dlskjhgs')
 							getDownloadURL(uploadProcess.snapshot.ref).then((url) => {
 								console.log(url)
 								

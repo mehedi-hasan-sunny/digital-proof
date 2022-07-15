@@ -1,5 +1,5 @@
 <template>
-	<div class="border border-gray-200 text-center rounded w-1/2 p-2 bg-white flex justify-between items-center">
+	<div class="border border-gray-200 text-center rounded w-11/12 md:w-1/2 p-2 bg-white flex justify-between items-center">
 		<div class="w-full h-full border-r border-gray-300 inline-flex justify-center flex-col items-center">
 			<span class="text-xs font-semibold mb-2 text-gray-600">
 				Trim size of your file
