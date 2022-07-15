@@ -46,7 +46,7 @@
 <script lang="ts">
 import {inject, ref} from "vue";
 import RoundButton from "../../elements/RoundButton.vue";
-import * as pdfMake from "pdfmake/build/pdfmake";
+import {createPdf} from 'pdfmake/build/pdfmake.js';
 import {InjectFileListType} from "../../types";
 import {canvasDrawer} from "../../helpers/canvasDrawer";
 import {useRoute} from "vue-router";
@@ -105,7 +105,7 @@ export default {
 					pageBreak: 'after'
 				}
 			})
-			const makePDF = (<any>pdfMake).createPdf({content: downloadContent});
+			const makePDF = createPdf({content: downloadContent as unknown as any});
 			makePDF.download(`digital-proof-${(new Date().getTime())}`);
 		}
 		const closeToast = () => {
