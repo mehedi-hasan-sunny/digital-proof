@@ -2,7 +2,7 @@
 	<nav class="bg-white border-gray-200 p-4 sticky top-0 z-50 bg-white">
 		<div class="container flex flex-wrap justify-center items-center mx-auto">
 			<router-link to="/" @click="clearFiles">
-				<img alt="Digital proof logo" src="../../assets/logo.png"/>
+				<img alt="Digital proof logo" src="../../assets/logo.png" class="h-6"/>
 			</router-link>
 		</div>
 	</nav>

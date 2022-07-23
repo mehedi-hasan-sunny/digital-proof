@@ -1,4 +1,4 @@
-import {defineConfig, loadEnv} from 'vite'
+import {defineConfig, loadEnv, splitVendorChunkPlugin} from 'vite'
 import vue from '@vitejs/plugin-vue'
 import {createHtmlPlugin} from 'vite-plugin-html'
 // https://vitejs.dev/config/
@@ -8,6 +8,7 @@ export default defineConfig((mode: any) => {
     return {
         plugins: [
             vue(),
+            splitVendorChunkPlugin(),
             createHtmlPlugin({
                 minify: true,
                 inject: {

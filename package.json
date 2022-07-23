@@ -1,7 +1,7 @@
 {
   "name": "digital-proof",
   "private": true,
-  "version": "0.0.5",
+  "version": "0.0.6",
   "scripts": {
     "dev": "vite",
     "build-tsc": "vue-tsc --noEmit --skipLibCheck && vite build",
@@ -9,14 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@pdfme/generator": "^1.0.14",
     "firebase": "^9.8.4",
-    "pdfmake": "^0.2.5",
+    "jspdf": "^2.5.1",
+    "pdfjs-dist": "^2.14.305",
     "vue": "^3.2.25",
     "vue-router": "^4.0.16"
   },
   "devDependencies": {
-    "@types/pdfmake": "^0.2.0",
+    "@types/pdfjs-dist": "^2.10.378",
     "@vitejs/plugin-vue": "^2.3.3",
     "autoprefixer": "^10.4.7",
     "postcss": "^8.4.14",

@@ -24,21 +24,19 @@
 				Delete
 			</span>
 		</div>
-		<div class="text-center" v-if="isShareable">
-			<round-button class="text-violet-900" @click="shareLink(currentImageIndex)">
-				<svg width="24" height="23" viewBox="0 0 24 23" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<path
-							d="M15.0911 0V5.88416C9.74634 5.88432 0 5.94296 0 22.5988C1.105 11.4608 6.18122 11.3908 15.0911 11.3906V17.8165L24 8.90754L15.0911 0Z"
-							fill="currentColor"/>
-				</svg>
-			</round-button>
-			<span class="block text-xs font-semibold mt-1">
-				Share
-			</span>
-		</div>
-		<Toaster v-model="toast" type="success">
-			<div class="ml-3 text-sm font-semibold dark:text-white mr-2">Share link copied clipboard!</div>
-		</Toaster>
+		<!--		<div class="text-center" v-if="isShareable">-->
+		<!--			<round-button class="text-violet-900" @click="shareLink(currentImageIndex)">-->
+		<!--				<svg width="24" height="23" viewBox="0 0 24 23" fill="none" xmlns="http://www.w3.org/2000/svg">-->
+		<!--					<path-->
+		<!--							d="M15.0911 0V5.88416C9.74634 5.88432 0 5.94296 0 22.5988C1.105 11.4608 6.18122 11.3908 15.0911 11.3906V17.8165L24 8.90754L15.0911 0Z"-->
+		<!--							fill="currentColor"/>-->
+		<!--				</svg>-->
+		<!--			</round-button>-->
+		<!--			<span class="block text-xs font-semibold mt-1">-->
+		<!--				Share-->
+		<!--			</span>-->
+		<!--		</div>-->
+		
 	
 	</div>
 </template>
@@ -46,15 +44,14 @@
 <script lang="ts">
 import {inject, ref} from "vue";
 import RoundButton from "../../elements/RoundButton.vue";
-import {createPdf} from 'pdfmake/build/pdfmake.js';
-import {InjectFileListType} from "../../types";
+import {jsPDF} from "jspdf";
+import {CanvasSelectedOptions, InjectFileListType, YesOrNo} from "../../types";
 import {canvasDrawer} from "../../helpers/canvasDrawer";
 import {useRoute} from "vue-router";
-import Toaster from "../Toaster.vue";
 
 export default {
 	name: "CanvasSideButton",
-	components: {Toaster, RoundButton},
+	components: {RoundButton},
 	props: {
 		currentImageIndex: Number,
 		isDeletable: {
@@ -74,44 +71,66 @@ export default {
 		const route = useRoute();
 		const files = inject("files") as unknown as InjectFileListType;
 		const deleteFile = inject("deleteFile");
-		const toast = ref(false);
-		const shareLink = () => {
-			toast.value = true;
-			navigator.clipboard.writeText(window.location.origin + route.fullPath);
-		}
+		const canvasOptions = inject("canvasOptions") as CanvasSelectedOptions;
 		
 		const downloadPdf = async () => {
 			
-			const drawnCanvases = await Promise.all(
-					Array.from(files.value).map(async (file) => {
-						const canvas: HTMLCanvasElement = document.createElement('canvas');
-						canvas.title = file.name;
-						return await canvasDrawer(file, null, canvas);
-					})
-			);
+			let drawnCanvases: any;
+			
+			if (route.name === "preview") {
+				drawnCanvases = await Promise.all(
+						Array.from(files.value).map(async (file) => {
+							const image: HTMLImageElement = new Image();
+							image.title = file.name;
+							image.dataset.type = file.type;
+							image.src = await fileToBase64(file) as string
+							return image
+						})
+				);
+			} else {
+				drawnCanvases = await Promise.all(
+						Array.from(files.value).map(async (file) => {
+							const canvas: HTMLCanvasElement = document.createElement('canvas');
+							canvas.title = file.name;
+							canvas.dataset.type = file.type;
+							return await canvasDrawer(file, null, canvas, null, canvasOptions.bleedSize, canvasOptions.showFoldedArea as YesOrNo);
+						})
+				);
+			}
 			
 			
-			// const base64Files = await Promise.all(Array.from(files.value).map((file) => {
-			// 	console.log(file)
-			// 	return fileToBase64(file)
-			// }))
+			const doc = new jsPDF({
+				orientation: drawnCanvases[0].width > drawnCanvases[0].height ? "l" : "p",
+				unit: 'px',
+				format: [drawnCanvases[0].width, drawnCanvases[0].height]
+			});
 			
-			
-			const downloadContent = drawnCanvases.map((drawnCanvas: any) => {
-				const fileType = drawnCanvas.title.split(".");
-				return {
-					image: drawnCanvas.toDataURL(`image/${fileType[fileType.length - 1]}`),
-					width: drawnCanvas.width > 512 ? 512 : drawnCanvas.width,
-					pageBreak: 'after'
+			drawnCanvases.forEach((drawnCanvas: any, index: number) => {
+				
+				if (index !== 0) {
+					doc.addPage(
+							[drawnCanvas.width, drawnCanvas.height],
+							drawnCanvas.width > drawnCanvas.height ? "l" : "p"
+					)
 				}
+				
+				const fileType = drawnCanvas.dataset.type.replace("image/", '').toUpperCase();
+				
+				doc.addImage(drawnCanvas,
+						fileType,
+						0,
+						0,
+						drawnCanvas.width,
+						drawnCanvas.height,
+						drawnCanvas.title
+				);
 			})
-			const makePDF = createPdf({content: downloadContent as unknown as any});
-			makePDF.download(`digital-proof-${(new Date().getTime())}`);
+			
+			doc.save(`digital-proof-${(new Date().getTime())}`);
 		}
-		const closeToast = () => {
-			toast.value = false;
-		}
-		const fileToBase64 = (file: any) => {
+		
+		
+		const fileToBase64 = (file: File) => {
 			return new Promise((resolve, reject) => {
 				const reader: any = new FileReader();
 				reader.readAsDataURL(file);
@@ -121,9 +140,6 @@ export default {
 		}
 		return {
 			deleteFile,
-			shareLink,
-			toast,
-			closeToast,
 			downloadPdf
 		}
 	}

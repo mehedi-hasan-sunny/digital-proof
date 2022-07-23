@@ -3,8 +3,8 @@
 	           :file-width="imageSizeInch.width"/>
 	
 	<div class="flex justify-center items-end gap-5 max-w-5xl mb-3">
-		<div class="inline-flex items-center" style="min-height: 25rem">
-			<canvas ref="canvas" class="block border border-gray-500 ml-20 max-w-full" style="max-height: 25rem"/>
+		<div class="inline-flex items-center justify-center min-w-[15rem] min-h-[24rem]">
+			<canvas ref="canvas" class="block border border-gray-500 ml-20 max-w-full max-h-full md:max-h-[39.5vw]"/>
 		</div>
 		<canvas-side-button :current-image-index="currentImageIndex" :is-deletable="true"/>
 	</div>
@@ -21,15 +21,19 @@
 </template>
 
 <script lang="ts">
-import {inject, onMounted, reactive, ref, computed, provide, watch, nextTick} from "vue";
+import {computed, inject, nextTick, onMounted, provide, reactive, ref, watch} from "vue";
 import {useRouter} from "vue-router";
 import FileInfo from "./FileInfo.vue";
 import CanvasPreview from "./CanvasPreview.vue";
 import Button from "../../elements/Button.vue";
 import CanvasSideButton from "./CanvasSideButton.vue";
-import {InjectFileListType} from "../../types";
+import {CanvasSelectedOptions, InjectFileListType, YesOrNo} from "../../types";
 import DirectionButton from "../../elements/DirectionButton.vue";
-import {canvasDrawer, makeFileFromCanvas} from "../../helpers/canvasDrawer";
+import {canvasDrawer, getFilesFromPDF, makeFileFromCanvas} from "../../helpers/canvasDrawer";
+import pdfJsWorker from 'pdfjs-dist/build/pdf.worker.entry.js'
+import * as pdfJs from 'pdfjs-dist';
+
+pdfJs.GlobalWorkerOptions.workerSrc = pdfJsWorker
 
 interface RefCanvasElement {
 	value: HTMLCanvasElement
@@ -56,13 +60,19 @@ export default {
 		
 		const files = inject("files") as unknown as InjectFileListType;
 		const lastDeletedIndex = inject("lastDeletedIndex") as unknown as NumberRefType;
-		const deleteFile = inject("deleteFile");
+		
 		const canvasFiles = inject("canvasFiles") as unknown as InjectFileListType;
+		
+		const addFiles = inject("addFiles") as Function;
+		const deleteFile = inject("deleteFile") as Function;
+		
+		const canvasOptions = inject("canvasOptions")  as CanvasSelectedOptions;
+		
 		
 		const imageSizeInch = computed(() => {
 			return {
-				width: Number((imageSize.width / 96 - 0.125).toFixed(3)),
-				height: Number((imageSize.height / 96 - 0.125).toFixed(3)),
+				width: imageSize.width,
+				height: imageSize.height,
 			}
 		})
 		
@@ -88,18 +98,24 @@ export default {
 					({width, height}: { width: number, height: number }) => {
 						imageSize.width = width;
 						imageSize.height = height;
-					})
+					},
+					canvasOptions.bleedSize,
+					canvasOptions.showFoldedArea as YesOrNo
+			)
 		}
-		
-		
 		
 		
 		const uploadFiles = async () => {
 			const drawnCanvases = await Promise.all(
-					Array.from(files.value).map(async (file) => {
-						const canvas: HTMLCanvasElement = document.createElement('canvas');
-						canvas.title = file.name;
-						return await canvasDrawer(file, null, canvas);
+					Array.from(files.value).map(async (file: File, index: number) => {
+						
+						if(currentImageIndex.value === index){
+							return canvas.value
+						}
+						const canvasElement: HTMLCanvasElement = document.createElement('canvas');
+						canvasElement.title = file.name.toLowerCase();
+						canvasElement.dataset.type = file.type;
+						return await canvasDrawer(file, null, canvasElement, null, canvasOptions.bleedSize, canvasOptions.showFoldedArea as YesOrNo);
 					})
 			);
 			const canvasDrawnFiles = await Promise.all(
@@ -115,10 +131,58 @@ export default {
 			});
 			
 		}
-		onMounted(() => {
+		
+		function readPDFFile(pdfFile: any) {
+			
+			const fileReader: any = new FileReader();
+			
+			fileReader.onload = async function () {
+				
+				const uint8Array = new Uint8Array(fileReader.result);
+				
+				const pdf = await pdfJs.getDocument(uint8Array).promise;
+				
+				const filesArray = Array(pdf.numPages).fill(null).map(async (item, index) => {
+					const canvasPDF = document.createElement("canvas") as HTMLCanvasElement;
+					const context = canvasPDF.getContext("2d");
+					
+					const pdfPage = await pdf.getPage(index + 1)
+					
+					const viewport = pdfPage.getViewport({scale: 1});
+					
+					canvasPDF.height = viewport.height;
+					canvasPDF.width = viewport.width;
+					
+					const renderContext: any = {
+						canvasContext: context,
+						viewport: viewport,
+					};
+					
+					await pdfPage.render(renderContext).promise
+					
+					return await makeFileFromCanvas(canvasPDF) as File
+				})
+				
+				addFiles(await Promise.all(filesArray))
+			};
+			
+			fileReader.readAsArrayBuffer(pdfFile);
+			
+		}
+		
+		
+		onMounted(async () => {
 			if (files.value.length) {
-				currentImageIndex.value = 0;
+				if (files.value[0].type === "application/pdf") {
+					const pdfFiles = await getFilesFromPDF(files.value[0])
+					
+					addFiles(pdfFiles)
+					
+					deleteFile(0)
+				}
 				changeCanvas();
+				
+				currentImageIndex.value = 0;
 			}
 		})
 		

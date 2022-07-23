@@ -8,9 +8,8 @@
 			           :file-width="fileStats.width"/>
 			
 			<div class="flex justify-center items-end gap-5 max-w-5xl mb-3">
-				<div class="inline-flex items-center" style="min-height: 25rem">
-					<img class="block border border-gray-500 ml-20 max-w-full" :src="fileStats.img.src"
-					     style="max-height: 25rem"/>
+				<div class="inline-flex items-center justify-center min-w-[15rem] min-h-[23rem]">
+					<img class="block border border-gray-500 ml-20 max-w-full max-h-[23rem]" :src="fileStats.img.src"/>
 				</div>
 				<canvas-side-button
 						:current-image-index="currentImageIndex"
@@ -19,11 +18,30 @@
 				/>
 			</div>
 			
+			<div class="flex items-center gap-2 mx-3">
+				<span class="bg-white rounded-lg p-2 text-sm break-all select-all" @click="shareLink">
+					{{ fullPath }}
+				</span>
+				<RoundButton class="text-blue-600 h-[2rem] w-[2rem] p-2 hover:bg-blue-600 hover:text-white active:text-blue-600" @click="shareLink">
+					<svg width="18" viewBox="0 0 24 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<path
+								d="M15.0911 0V5.88416C9.74634 5.88432 0 5.94296 0 22.5988C1.105 11.4608 6.18122 11.3908 15.0911 11.3906V17.8165L24 8.90754L15.0911 0Z"
+								fill="currentColor"/>
+					</svg>
+				</RoundButton>
+			</div>
+			
+			
 			<div class="flex justify-between items-center gap-3 mb-3">
 				<direction-button @click.prevent="slideAction('left')" direction="left"/>
 				<canvas-preview :image-links="imageLinks" @changeImageSrc="changeImageSrc" class="my-5"/>
 				<direction-button @click.prevent="slideAction('right')" direction="right"/>
 			</div>
+			
+			<Toaster v-model="toast" type="success">
+				<div class="ml-3 text-sm font-semibold dark:text-white mr-2">Share link copied clipboard!</div>
+			</Toaster>
+			
 		</template>
 		
 		<NotFound v-else-if="fileStats.loading === null"/>
@@ -43,10 +61,12 @@ import DirectionButton from "../elements/DirectionButton.vue";
 import CanvasSideButton from "../components/canvas/CanvasSideButton.vue";
 import NotFound from "./404.vue"
 import {makeFileFromCanvas} from "../helpers/canvasDrawer";
+import RoundButton from "../elements/RoundButton.vue";
+import Toaster from "../components/Toaster.vue";
 
 export default {
 	name: "Preview",
-	components: {NotFound, FileInfo, CanvasPreview, DirectionButton, CanvasSideButton},
+	components: {Toaster, RoundButton, NotFound, FileInfo, CanvasPreview, DirectionButton, CanvasSideButton},
 	
 	async setup() {
 		const route = useRoute();
@@ -60,7 +80,7 @@ export default {
 			height: 0,
 			width: 0,
 			length: 0,
-			loading: true as any
+			loading: true as null | boolean
 		})
 		const generateLink = (fileName: string) => {
 			return `https://firebasestorage.googleapis.com/v0/b/digital-proof-7e1ef.appspot.com/o/images%2F${fileName}?alt=media&token=c474eb67-fcd5-4067-bf40-cffad38bd780`
@@ -82,11 +102,16 @@ export default {
 					fileStats.loading = false;
 				}
 				
+				img.onerror = () => {
+					console.log("dasdasd")
+					fileStats.loading = null;
+				}
+				
 				filesToBeDownloaded.value.files = filesToBeDownloaded.value.fileNames.map((fileName: string) => {
 					return new Promise((resolve, reject) => {
 						try {
 							const img2 = new Image();
-							img2.crossOrigin="anonymous"
+							img2.crossOrigin = "anonymous"
 							img2.src = generateLink(fileName);
 							img2.onload = async () => {
 								const canvas = document.createElement("canvas");
@@ -141,13 +166,26 @@ export default {
 			return window.location.origin + route.fullPath
 		})
 		
+		const toast = ref(false);
+		const shareLink = () => {
+			toast.value = true;
+			navigator.clipboard.writeText(window.location.origin + route.fullPath);
+		}
+		
+		const closeToast = () => {
+			toast.value = false;
+		}
+		
 		return {
 			fileStats,
 			imageLinks,
 			changeImageSrc,
 			slideAction,
 			currentImageIndex,
-			fullPath
+			fullPath,
+			toast,
+			shareLink,
+			closeToast
 		}
 	}
 }

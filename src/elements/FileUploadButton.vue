@@ -1,6 +1,6 @@
 <template>
 	<label for="select-files" class="bg-violet-900 text-center hover:cursor-pointer text-white rounded w-72 px-5 py-2" :class="$attrs.class">
-		<input id="select-files" type="file" accept="image/*" multiple hidden @change="selectFiles">
+		<input id="select-files" type="file" accept="image/*,application/pdf" multiple hidden @change="selectFiles">
 		<slot></slot>
 	</label>
 </template>

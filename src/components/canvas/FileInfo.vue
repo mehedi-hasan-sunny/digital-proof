@@ -1,11 +1,12 @@
 <template>
-	<div class="border border-gray-200 text-center rounded w-11/12 md:w-1/2 p-2 bg-white flex justify-between items-center">
+	<div
+			class="border border-gray-200 text-center rounded w-11/12 md:w-1/2 p-2 bg-white flex justify-between items-center">
 		<div class="w-full h-full border-r border-gray-300 inline-flex justify-center flex-col items-center">
 			<span class="text-xs font-semibold mb-2 text-gray-600">
 				Trim size of your file
 			</span>
 			<span class="font-bold">
-				{{ fileHeight }} x {{ fileWidth }}
+				{{ imageSize.height }} x {{ imageSize.width }} inch
 			</span>
 		</div>
 		<div class="w-full h-full inline-flex justify-center flex-col items-center min-h-min">
@@ -31,6 +32,14 @@ export default {
 		},
 		fileCount: {
 			type: Number
+		}
+	},
+	computed: {
+		imageSize() {
+			return {
+				height: Number((this.fileHeight * 0.0104166667).toFixed(3)),
+				width: Number((this.fileWidth * 0.0104166667).toFixed(3))
+			}
 		}
 	}
 }

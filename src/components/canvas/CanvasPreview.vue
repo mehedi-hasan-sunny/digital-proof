@@ -21,6 +21,7 @@
 import {computed, inject} from "vue";
 import FileUploadButton from "../../elements/FileUploadButton.vue";
 import {InjectFileListType} from "../../types";
+import {getFilesFromPDF} from "../../helpers/canvasDrawer";
 
 
 export default {
@@ -46,7 +47,17 @@ export default {
 			const changeCanvas = inject("changeCanvas");
 			
 			const getFiles = (files: FileList) => {
-				addFiles(files);
+				
+				const filesArray = Array.from(files).reduce(async (acc: any, file, index) => {
+					if (file.type === "application/pdf") {
+						acc = [...acc, ...(await getFilesFromPDF(file))]
+					} else {
+						acc.push(file)
+					}
+					return acc
+				}, []);
+				
+				addFiles(filesArray);
 			}
 			const images = computed(() => {
 				return Array.from(files.value).map((file) => URL.createObjectURL(file))
