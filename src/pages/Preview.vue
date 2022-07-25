@@ -103,7 +103,6 @@ export default {
 				}
 				
 				img.onerror = () => {
-					console.log("dasdasd")
 					fileStats.loading = null;
 				}
 				
@@ -114,12 +113,8 @@ export default {
 							img2.crossOrigin = "anonymous"
 							img2.src = generateLink(fileName);
 							img2.onload = async () => {
-								const canvas = document.createElement("canvas");
-								canvas.width = img2.width;
-								canvas.height = img2.height;
-								const ctx: any = canvas.getContext("2d");
-								ctx.drawImage(img2, 0, 0);
-								resolve(canvas);
+								console.log(img2)
+								resolve(img2);
 							}
 						} catch (e) {
 							reject(e)
@@ -128,6 +123,7 @@ export default {
 				})
 				
 				const canvases = await Promise.all(filesToBeDownloaded.value.files);
+				console.log(canvases)
 				
 				files.value = await Promise.all(
 						canvases.map(async (drawnCanvas: any) => {

@@ -11,6 +11,9 @@ export const canvasDrawer = (
     let canvasEl = newCanvas ?? canvas.value;
     const ctx = canvasEl.getContext("2d") as unknown as CanvasRenderingContext2D;
 
+    canvasEl.title = file.name;
+    canvasEl.dataset.type = file.type;
+
     const image: HTMLImageElement = new Image();
 
     const reader = new FileReader();
@@ -104,7 +107,7 @@ export const makeFileFromCanvas = (drawnCanvas: HTMLCanvasElement) => {
                         : `${(new Date().getTime())}${blob.type.replace("image/", '.')}`,
                     {type: blob.type});
                 resolve(canvasFile);
-            })
+            }, drawnCanvas.dataset.type)
         } catch (e) {
             reject(e)
         }
@@ -123,10 +126,18 @@ export const getFilesFromPDF = async (pdfFile: any) => {
 
         const pdfPage = await pdf.getPage(index + 1)
 
-        console.log(await pdfPage.getOperatorList())
-        console.log(PDFJS.OPS.paintJpegXObject)
-        console.log(pdfPage)
-        console.log(pdfPage.objs)
+        const operatorList = await pdfPage.getOperatorList();
+
+        const validObjectTypes = [
+            PDFJS.OPS.paintImageXObject, // 85
+            PDFJS.OPS.paintImageXObjectRepeat, // 88
+            PDFJS.OPS.paintJpegXObject //82
+        ];
+
+        // console.log(await pdfPage.getOperatorList())
+        // console.log(PDFJS.OPS.paintJpegXObject)
+        // console.log(pdfPage)
+        // console.log(await pdfPage.objs)
         const viewport = pdfPage.getViewport({scale: 0.7500001});
 
         canvasPDF.height = Math.floor(viewport.height);
