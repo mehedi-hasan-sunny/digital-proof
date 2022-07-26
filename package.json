@@ -16,7 +16,6 @@
     "vue-router": "^4.0.16"
   },
   "devDependencies": {
-    "@types/pdfjs-dist": "^2.10.378",
     "@vitejs/plugin-vue": "^2.3.3",
     "autoprefixer": "^10.4.7",
     "postcss": "^8.4.14",

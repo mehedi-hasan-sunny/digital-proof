@@ -104,8 +104,8 @@ export const makeFileFromCanvas = (drawnCanvas: HTMLCanvasElement) => {
                 const canvasFile = new File([blob],
                     drawnCanvas?.title !== ''
                         ? drawnCanvas?.title
-                        : `${(new Date().getTime())}${blob.type.replace("image/", '.')}`,
-                    {type: blob.type});
+                        : `${(new Date().getTime())}${(drawnCanvas.dataset.type ?? blob.type).replace("image/", '.')}`,
+                    {type: drawnCanvas.dataset.type ?? blob.type});
                 resolve(canvasFile);
             }, drawnCanvas.dataset.type)
         } catch (e) {

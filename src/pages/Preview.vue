@@ -22,7 +22,8 @@
 				<span class="bg-white rounded-lg p-2 text-sm break-all select-all" @click="shareLink">
 					{{ fullPath }}
 				</span>
-				<RoundButton class="text-blue-600 h-[2rem] w-[2rem] p-2 hover:bg-blue-600 hover:text-white active:text-blue-600" @click="shareLink">
+				<RoundButton class="text-blue-600 h-[2rem] w-[2rem] p-2 hover:bg-blue-600 hover:text-white active:text-blue-600"
+				             @click="shareLink">
 					<svg width="18" viewBox="0 0 24 23" fill="none" xmlns="http://www.w3.org/2000/svg">
 						<path
 								d="M15.0911 0V5.88416C9.74634 5.88432 0 5.94296 0 22.5988C1.105 11.4608 6.18122 11.3908 15.0911 11.3906V17.8165L24 8.90754L15.0911 0Z"
@@ -41,7 +42,7 @@
 			<Toaster v-model="toast" type="success">
 				<div class="ml-3 text-sm font-semibold dark:text-white mr-2">Share link copied clipboard!</div>
 			</Toaster>
-			
+		
 		</template>
 		
 		<NotFound v-else-if="fileStats.loading === null"/>
@@ -93,43 +94,34 @@ export default {
 			
 			if (filesToBeDownloaded.value) {
 				fileStats.length = filesToBeDownloaded.value.fileNames.length;
-				const img = new Image();
-				img.src = generateLink(filesToBeDownloaded.value.fileNames[0]);
-				img.onload = () => {
-					fileStats.img = img;
-					fileStats.width = img.width
-					fileStats.height = img.height
-					fileStats.loading = false;
-				}
 				
-				img.onerror = () => {
-					fileStats.loading = null;
-				}
-				
-				filesToBeDownloaded.value.files = filesToBeDownloaded.value.fileNames.map((fileName: string) => {
+				filesToBeDownloaded.value.files = filesToBeDownloaded.value.fileNames.map((fileName: string, index: number) => {
+					
 					return new Promise((resolve, reject) => {
 						try {
-							const img2 = new Image();
-							img2.crossOrigin = "anonymous"
-							img2.src = generateLink(fileName);
-							img2.onload = async () => {
-								console.log(img2)
-								resolve(img2);
-							}
+							fetch(generateLink(fileName))
+									.then(res => res.blob())
+									.then(data => {
+										const file = new File([data], fileName, {type: data.type})
+										files.value.push(file)
+										const image = new Image();
+										image.src = URL.createObjectURL(data);
+										if(index === 0){
+											image.onload = () =>{
+												fileStats.img = image;
+												fileStats.width = image.width;
+												fileStats.height = image.height;
+												fileStats.loading = false;
+											}
+										}
+										resolve(image)
+									})
 						} catch (e) {
 							reject(e)
+							fileStats.loading = null;
 						}
 					})
 				})
-				
-				const canvases = await Promise.all(filesToBeDownloaded.value.files);
-				console.log(canvases)
-				
-				files.value = await Promise.all(
-						canvases.map(async (drawnCanvas: any) => {
-							return await makeFileFromCanvas(drawnCanvas);
-						})
-				);
 				
 			} else {
 				fileStats.loading = null;
