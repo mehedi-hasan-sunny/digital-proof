@@ -2,32 +2,21 @@
 import DragNDrop from '../components/DragNDrop.vue'
 import {ref, provide, onMounted, inject, reactive} from "vue";
 import CanvasDraw from "../components/canvas/CanvasDraw.vue";
-import {InjectFileListType} from "../types";
+import {CanvasSelectedOptions, InjectFileListType} from "../types";
 
 
 const files = inject("files") as unknown as InjectFileListType;
-const lastDeletedIndex = ref(-1);
+const canvasOptions = inject("canvasOptions") as CanvasSelectedOptions;
+
 
 const addFiles = (imageFiles: FileList): void => {
 	files.value = [...files.value, ...imageFiles] as unknown as FileList
 }
 
-const deleteFile = (deleteIndex: number) => {
-	lastDeletedIndex.value = deleteIndex
-	files.value = Array.from(files.value).filter((item, index) => index !== deleteIndex) as unknown as FileList
-}
 const canvasFiles = inject("canvasFiles") as any;
-
-const canvasOptions = reactive({
-	bleedSize: 0.125,
-	showFoldedArea: "no",
-});
 
 
 provide('addFiles', addFiles)
-provide('deleteFile', deleteFile)
-provide('lastDeletedIndex', lastDeletedIndex)
-provide('canvasOptions', canvasOptions)
 
 // const setTrimSize = (event: Event) => {
 // 	const element = event.target as  HTMLSelectElement

@@ -1,4 +1,7 @@
 import * as PDFJS from "pdfjs-dist";
+// @ts-ignore
+PDFJS.GlobalWorkerOptions.workerSrc = () => import('pdfjs-dist/build/pdf.worker.entry.js')
+
 import {YesOrNo} from "../types";
 
 export const canvasDrawer = (
@@ -125,14 +128,14 @@ export const getFilesFromPDF = async (pdfFile: any) => {
         const context = canvasPDF.getContext("2d");
 
         const pdfPage = await pdf.getPage(index + 1)
-
-        const operatorList = await pdfPage.getOperatorList();
-
-        const validObjectTypes = [
-            PDFJS.OPS.paintImageXObject, // 85
-            PDFJS.OPS.paintImageXObjectRepeat, // 88
-            PDFJS.OPS.paintJpegXObject //82
-        ];
+        //
+        // const operatorList = await pdfPage.getOperatorList();
+        //
+        // const validObjectTypes = [
+        //     PDFJS.OPS.paintImageXObject, // 85
+        //     PDFJS.OPS.paintImageXObjectRepeat, // 88
+        //     PDFJS.OPS.paintJpegXObject //82
+        // ];
 
         // console.log(await pdfPage.getOperatorList())
         // console.log(PDFJS.OPS.paintJpegXObject)
@@ -142,6 +145,7 @@ export const getFilesFromPDF = async (pdfFile: any) => {
 
         canvasPDF.height = Math.floor(viewport.height);
         canvasPDF.width = Math.floor(viewport.width);
+        canvasPDF.dataset.type = "image/jpeg";
 
         const renderContext: any = {
             canvasContext: context,
@@ -154,4 +158,17 @@ export const getFilesFromPDF = async (pdfFile: any) => {
     })
 
     return await Promise.all(filesArray)
+}
+
+export const makeInitialFiles = async (fileList: FileList) =>{
+    let files: any[] = []
+    for (const file of Array.from(fileList)) {
+        if (file.type === "application/pdf") {
+            const files1 = await getFilesFromPDF(file);
+            files = [...files, ...files1];
+        } else {
+            files.push(file)
+        }
+    }
+    return files;
 }

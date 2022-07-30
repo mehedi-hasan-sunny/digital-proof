@@ -4,7 +4,8 @@
 	
 	<div class="flex justify-center items-end gap-5 max-w-5xl mb-3">
 		<div class="inline-flex items-center justify-center min-w-[15rem] min-h-[24rem]">
-			<canvas ref="canvas" class="block border border-gray-500 ml-20 max-w-full max-h-full md:max-h-[25rem]"/>
+			<spinner v-if="spinner"/>
+			<canvas v-show="!spinner" ref="canvas" class="block border border-gray-500 ml-20 max-w-full max-h-full md:max-h-[25rem]"/>
 		</div>
 		<canvas-side-button :current-image-index="currentImageIndex" :is-deletable="true"/>
 	</div>
@@ -17,7 +18,7 @@
 		<direction-button @click.prevent="slideAction('right')" direction="right"/>
 	
 	</div>
-	<Button class="w-80 mb-3" @click="uploadFiles">Upload</Button>
+	<Button class="w-80 mb-3" @click="uploadFiles" :disabled="spinner">Upload</Button>
 </template>
 
 <script lang="ts">
@@ -29,11 +30,9 @@ import Button from "../../elements/Button.vue";
 import CanvasSideButton from "./CanvasSideButton.vue";
 import {CanvasSelectedOptions, InjectFileListType, YesOrNo} from "../../types";
 import DirectionButton from "../../elements/DirectionButton.vue";
-import {canvasDrawer, getFilesFromPDF, makeFileFromCanvas, readPDFFile} from "../../helpers/canvasDrawer";
-import pdfJsWorker from 'pdfjs-dist/build/pdf.worker.entry.js'
-import * as pdfJs from 'pdfjs-dist';
-
-pdfJs.GlobalWorkerOptions.workerSrc = pdfJsWorker
+import {canvasDrawer, getFilesFromPDF, makeFileFromCanvas} from "../../helpers/canvasDrawer";
+import Loading from "../Loading.vue";
+import Spinner from "../Spinner.vue";
 
 interface RefCanvasElement {
 	value: HTMLCanvasElement
@@ -50,10 +49,11 @@ interface NumberRefType {
 
 export default {
 	name: "CanvasDraw",
-	components: {DirectionButton, CanvasSideButton, CanvasPreview, FileInfo, Button},
+	components: {Spinner, Loading, DirectionButton, CanvasSideButton, CanvasPreview, FileInfo, Button},
 	setup() {
 		const router = useRouter();
 		const canvas = ref(null) as unknown as RefCanvasElement;
+		const spinner: { value: boolean } = ref(true);
 		const currentImageIndex: NumberRefType = ref(0);
 		
 		const imageSize: ImageSizeType = reactive({width: 0, height: 0});
@@ -66,7 +66,7 @@ export default {
 		const addFiles = inject("addFiles") as Function;
 		const deleteFile = inject("deleteFile") as Function;
 		
-		const canvasOptions = inject("canvasOptions")  as CanvasSelectedOptions;
+		const canvasOptions = inject("canvasOptions") as CanvasSelectedOptions;
 		
 		
 		const imageSizeInch = computed(() => {
@@ -90,11 +90,12 @@ export default {
 			}
 		}
 		
-		const changeCanvas = (index: number = -1) => {
+		const changeCanvas = async (index: number = -1) => {
 			if (index > -1) {
 				currentImageIndex.value = index;
 			}
-			canvasDrawer(files.value[currentImageIndex.value], canvas, undefined,
+			spinner.value = true;
+			await canvasDrawer(files.value[currentImageIndex.value], canvas, undefined,
 					({width, height}: { width: number, height: number }) => {
 						imageSize.width = width;
 						imageSize.height = height;
@@ -102,6 +103,9 @@ export default {
 					canvasOptions.bleedSize,
 					canvasOptions.showFoldedArea as YesOrNo
 			)
+			await nextTick(()=>{
+				spinner.value = false
+			});
 		}
 		
 		
@@ -109,7 +113,7 @@ export default {
 			
 			const drawnCanvases = await Promise.all(
 					Array.from(files.value).map(async (file: File, index: number) => {
-						if(currentImageIndex.value === index){
+						if (currentImageIndex.value === index) {
 							return canvas.value
 						}
 						const canvasElement: HTMLCanvasElement = document.createElement('canvas');
@@ -135,6 +139,8 @@ export default {
 		
 		onMounted(async () => {
 			if (files.value.length) {
+				
+				// console.log(files.value)
 				if (files.value[0].type === "application/pdf") {
 					const pdfFiles = await getFilesFromPDF(files.value[0])
 					
@@ -142,7 +148,7 @@ export default {
 					
 					deleteFile(0)
 				}
-				changeCanvas();
+				await changeCanvas();
 				
 				currentImageIndex.value = 0;
 			}
@@ -171,7 +177,8 @@ export default {
 			currentImageIndex,
 			slideAction,
 			changeCanvas,
-			uploadFiles
+			uploadFiles,
+			spinner
 		}
 	}
 }

@@ -9,7 +9,7 @@
 			
 			<div class="flex justify-center items-end gap-5 max-w-5xl mb-3">
 				<div class="inline-flex items-center justify-center min-w-[15rem] min-h-[23rem]">
-					<img class="block border border-gray-500 ml-20 max-w-full max-h-[23rem]" :src="fileStats.img.src"/>
+					<img class="block border border-gray-500 ml-20 max-w-full max-h-[23rem]" loading="lazy" :src="fileStats.img.src"/>
 				</div>
 				<canvas-side-button
 						:current-image-index="currentImageIndex"
@@ -19,7 +19,7 @@
 			</div>
 			
 			<div class="flex items-center gap-2 mx-3">
-				<span class="bg-white rounded-lg p-2 text-sm break-all select-all" @click="shareLink">
+				<span class="bg-white rounded-lg ml-11 p-2 text-sm break-all select-all" @click="shareLink">
 					{{ fullPath }}
 				</span>
 				<RoundButton class="text-blue-600 h-[2rem] w-[2rem] p-2 hover:bg-blue-600 hover:text-white active:text-blue-600"
@@ -46,6 +46,8 @@
 		</template>
 		
 		<NotFound v-else-if="fileStats.loading === null"/>
+		
+		<spinner v-else></spinner>
 	
 	</div>
 </template>
@@ -64,10 +66,11 @@ import NotFound from "./404.vue"
 import {makeFileFromCanvas} from "../helpers/canvasDrawer";
 import RoundButton from "../elements/RoundButton.vue";
 import Toaster from "../components/Toaster.vue";
+import Spinner from "../components/Spinner.vue";
 
 export default {
 	name: "Preview",
-	components: {Toaster, RoundButton, NotFound, FileInfo, CanvasPreview, DirectionButton, CanvasSideButton},
+	components: {Spinner, Toaster, RoundButton, NotFound, FileInfo, CanvasPreview, DirectionButton, CanvasSideButton},
 	
 	async setup() {
 		const route = useRoute();
@@ -108,7 +111,7 @@ export default {
 										image.src = URL.createObjectURL(data);
 										if(index === 0){
 											image.onload = () =>{
-												fileStats.img = image;
+												fileStats.img.src = image.src;
 												fileStats.width = image.width;
 												fileStats.height = image.height;
 												fileStats.loading = false;

@@ -2,6 +2,7 @@
 import {defineComponent} from "vue";
 import Button from "../elements/Button.vue";
 import FileUploadButton from "../elements/FileUploadButton.vue";
+import {makeInitialFiles} from "../helpers/canvasDrawer";
 
 interface DropEvent<T = Element> extends DragEvent {
 	dataTransfer: DataTransfer;
@@ -34,8 +35,9 @@ export default defineComponent({
 		}
 	},
 	watch: {
-		files(newFiles: FileList) {
-			this.$emit('update:modelValue', newFiles);
+		async files(newFiles: FileList) {
+			const files = await makeInitialFiles(newFiles)
+			this.$emit('update:modelValue', files);
 		}
 	}
 })

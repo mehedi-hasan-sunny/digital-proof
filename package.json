@@ -1,7 +1,7 @@
 {
   "name": "digital-proof",
   "private": true,
-  "version": "0.0.6",
+  "version": "1.0.0",
   "scripts": {
     "dev": "vite",
     "build-tsc": "vue-tsc --noEmit --skipLibCheck && vite build",

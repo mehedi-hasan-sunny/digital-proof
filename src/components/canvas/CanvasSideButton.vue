@@ -1,7 +1,7 @@
 <template>
 	<div class="flex flex-col gap-5">
-		<div class="text-center">
-			<round-button class="text-violet-900" @click="downloadPdf">
+		<div class="text-center mb-5">
+			<round-button class="text-violet-900" @click="downloadPdf" :loading="downloadLoading">
 				<svg width="22" height="20" viewBox="0 0 22 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 					<path
 							d="M11 13V1M11 13L7 9M11 13L15 9M1 15L1.621 17.485C1.72915 17.9177 1.97882 18.3018 2.33033 18.5763C2.68184 18.8508 3.11501 18.9999 3.561 19H18.439C18.885 18.9999 19.3182 18.8508 19.6697 18.5763C20.0212 18.3018 20.2708 17.9177 20.379 17.485L21 15"
@@ -24,25 +24,11 @@
 				Delete
 			</span>
 		</div>
-		<!--		<div class="text-center" v-if="isShareable">-->
-		<!--			<round-button class="text-violet-900" @click="shareLink(currentImageIndex)">-->
-		<!--				<svg width="24" height="23" viewBox="0 0 24 23" fill="none" xmlns="http://www.w3.org/2000/svg">-->
-		<!--					<path-->
-		<!--							d="M15.0911 0V5.88416C9.74634 5.88432 0 5.94296 0 22.5988C1.105 11.4608 6.18122 11.3908 15.0911 11.3906V17.8165L24 8.90754L15.0911 0Z"-->
-		<!--							fill="currentColor"/>-->
-		<!--				</svg>-->
-		<!--			</round-button>-->
-		<!--			<span class="block text-xs font-semibold mt-1">-->
-		<!--				Share-->
-		<!--			</span>-->
-		<!--		</div>-->
-		
-	
 	</div>
 </template>
 
 <script lang="ts">
-import {inject, ref} from "vue";
+import {inject, nextTick, reactive, ref, toRefs} from "vue";
 import RoundButton from "../../elements/RoundButton.vue";
 import {jsPDF} from "jspdf";
 import {CanvasSelectedOptions, InjectFileListType, YesOrNo} from "../../types";
@@ -73,20 +59,39 @@ export default {
 		const deleteFile = inject("deleteFile");
 		const canvasOptions = inject("canvasOptions") as CanvasSelectedOptions;
 		
+		const loadingButtons = reactive({
+			downloadLoading: false
+		})
+		
+		
+		
+		const downloadableItem = (drawnCanvas: HTMLCanvasElement | HTMLImageElement) =>{
+			if (drawnCanvas instanceof HTMLImageElement)
+			{
+				return drawnCanvas
+			}
+			return drawnCanvas.toDataURL(drawnCanvas.dataset.type ?? 'image/jpeg')
+		}
+		
+		
+		
 		const downloadPdf = async () => {
 			
 			let drawnCanvases: any;
-			
+			loadingButtons.downloadLoading = true;
 			if (route.name === "preview") {
 				drawnCanvases = await Promise.all(
 						Array.from(files.value).map(async (file) => {
 							const image: HTMLImageElement = new Image();
 							image.title = file.name;
 							image.dataset.type = file.type;
+							image.loading = "lazy";
 							image.src = await fileToBase64(file) as string
 							return image
 						})
 				);
+				createPDF(drawnCanvases)
+				
 			} else {
 				drawnCanvases = await Promise.all(
 						Array.from(files.value).map(async (file) => {
@@ -96,9 +101,12 @@ export default {
 							return await canvasDrawer(file, null, canvas, null, canvasOptions.bleedSize, canvasOptions.showFoldedArea as YesOrNo);
 						})
 				);
+				createPDF(drawnCanvases, true)
 			}
 			
-			
+		}
+		
+		const createPDF = (drawnCanvases: any, fromCanvas: boolean = false) =>{
 			const doc = new jsPDF({
 				orientation: drawnCanvases[0].width > drawnCanvases[0].height ? "l" : "p",
 				unit: 'px',
@@ -106,27 +114,42 @@ export default {
 			});
 			
 			drawnCanvases.forEach((drawnCanvas: any, index: number) => {
-				
-				if (index !== 0) {
-					doc.addPage(
-							[drawnCanvas.width, drawnCanvas.height],
-							drawnCanvas.width > drawnCanvas.height ? "l" : "p"
-					)
+				if(!fromCanvas) {
+					drawnCanvas.onload = () =>{
+						addPagesToPdfDoc(doc, drawnCanvas, index, drawnCanvases.length - 1)
+					}
 				}
-				
-				const fileType = drawnCanvas.dataset.type.replace("image/", '').toUpperCase();
-				
-				doc.addImage(drawnCanvas,
-						fileType,
-						0,
-						0,
-						drawnCanvas.width,
-						drawnCanvas.height,
-						drawnCanvas.title
-				);
-			})
+				else{
+					addPagesToPdfDoc(doc, drawnCanvas, index, drawnCanvases.length - 1)
+				}
+			});
 			
-			doc.save(`digital-proof-${(new Date().getTime())}`);
+		}
+		
+		const addPagesToPdfDoc = (doc: jsPDF, drawnCanvas: HTMLImageElement | HTMLCanvasElement | any, index: number, downloadAt: number) =>{
+			if (index !== 0) {
+				doc.addPage(
+						[drawnCanvas.width, drawnCanvas.height],
+						drawnCanvas.width > drawnCanvas.height ? "l" : "p"
+				)
+			}
+			
+			const fileType = drawnCanvas.dataset.type.replace("image/", '').toUpperCase();
+			
+			doc.addImage(
+					downloadableItem(drawnCanvas),
+					fileType,
+					0,
+					0,
+					drawnCanvas.width,
+					drawnCanvas.height,
+					drawnCanvas.title
+			);
+			
+			if(index === downloadAt){
+				doc.save(`digital-proof-${(new Date().getTime())}`);
+				loadingButtons.downloadLoading = false;
+			}
 		}
 		
 		
@@ -140,7 +163,8 @@ export default {
 		}
 		return {
 			deleteFile,
-			downloadPdf
+			downloadPdf,
+			...toRefs(loadingButtons)
 		}
 	}
 }
