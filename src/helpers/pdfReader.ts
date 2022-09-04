@@ -1,8 +1,3 @@
-/*
-PDF SAMPLE
-https://github.com/mozilla/pdf.js/files/6793219/pdf-test.pdf
-*/
-
 import * as PDFJS from "pdfjs-dist";
 // @ts-ignore
 import pdfJsWorker from 'pdfjs-dist/build/pdf.worker.entry.js'
@@ -34,20 +29,22 @@ async function getPageImages(pageNum: number, pdfDocumentInstance: any) {
             PDFJS.OPS.paintImageXObjectRepeat, // 88
             PDFJS.OPS.paintJpegXObject //82
         ];
-        console.log(operatorList)
+        // console.log(operatorList)
 
         return operatorList.fnArray
             .reduce(async (acc: any, element: any, idx: number) => {
                 if (validObjectTypes.includes(element)) {
                     const imageName = operatorList.argsArray[idx][0];
-                    console.log(pdfPage.objs)
+                    // console.log(pdfPage.objs)
                     const image = await pdfPage.objs.get(imageName);
 
                     // Uint8ClampedArray
                     const imageUnit8Array = image.data;
                     const imageWidth = image.width;
                     const imageHeight = image.height;
-                    console.log('image', imageUnit8Array);
+                    // console.log('image', imageUnit8Array);
+                    // console.log('imageWidth', imageWidth);
+                    // console.log('imageHeight', imageHeight);
 
 
                     // imageUnit8Array contains only RGB need add alphaChanel
@@ -55,23 +52,23 @@ async function getPageImages(pageNum: number, pdfDocumentInstance: any) {
 
                     const imageData = new ImageData(imageUint8ArrayWithAlphaChanel, imageWidth, imageHeight);
 
-                    const blob = await new Blob([imageData.data.buffer])
+                    // const blob = await new Blob([imageData.data.buffer])
 
-                    console.log(blob)
-                    var arr = (new Uint8Array(imageData.data.buffer)).subarray(0, 4);
-                    console.log(arr)
-                    var header = "";
-                    for(var i = 0; i < arr.length; i++) {
-                        header += arr[i].toString(16);
-                    }
-
-                    console.log(header)
+                    // console.log(blob)
+                    // var arr = (new Uint8Array(imageData.data.buffer)).subarray(0, 4);
+                    // console.log(arr)
+                    // var header = "";
+                    // for(var i = 0; i < arr.length; i++) {
+                    //     header += arr[i].toString(16);
+                    // }
+                    //
+                    // console.log(header)
 
                     // acc = new File([image], `${(new Date().getTime())}.png`,
                     //     {type: 'image/png'});
 
 
-                    console.log(imageData)
+                    // console.log(imageData)
                     const canvas: HTMLCanvasElement = document.createElement('canvas');
                     canvas.width = imageWidth;
                     canvas.height = imageHeight;
@@ -89,12 +86,14 @@ async function getPageImages(pageNum: number, pdfDocumentInstance: any) {
     }
 }
 
-export const onLoadPdfFile = async (event: any, callback: any) => {
+export const onLoadPdfFile = async (fileData: any, callback: any) => {
     try {
+        // console.log(event)
         // turn array buffer into typed array
-        const typedArray = new Uint8Array(event.target.result);
+        // const typedArray = new Uint8Array(event);
 
-        const loadingPdfDocument = PDFJS.getDocument(typedArray);
+        // console.log(typedArray)
+        const loadingPdfDocument = PDFJS.getDocument(fileData);
         const pdfDocumentInstance = await loadingPdfDocument.promise;
 
         const totalNumPages = pdfDocumentInstance.numPages;
@@ -106,23 +105,9 @@ export const onLoadPdfFile = async (event: any, callback: any) => {
 
         const pagesData = await Promise.all(pagesPromises);
 
-
         callback(pagesData)
-        // console.log(pagesData);
 
     } catch (error) {
-        console.log(error);
+        console.error(error);
     }
 };
-
-
-// document.getElementById('file-pdf').addEventListener('change', event => {
-//     const file = event.target.files[0];
-//
-//     if (file.type !== 'application/pdf') {
-//         alert(`File ${file.name} is not a PDF file type`);
-//         return;
-//     }
-//
-
-// });

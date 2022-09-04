@@ -1,8 +1,10 @@
-import * as PDFJS from "pdfjs-dist";
+// import * as PDFJS from "pdfjs-dist";
 // @ts-ignore
-PDFJS.GlobalWorkerOptions.workerSrc = () => import('pdfjs-dist/build/pdf.worker.entry.js')
-
+// import pdfJsWorker from 'pdfjs-dist/build/pdf.worker.entry.js'
 import {YesOrNo} from "../types";
+import {onLoadPdfFile} from "./pdfReader";
+
+// PDFJS.GlobalWorkerOptions.workerSrc = pdfJsWorker
 
 export const canvasDrawer = (
     file: File, canvas: any,
@@ -119,48 +121,54 @@ export const makeFileFromCanvas = (drawnCanvas: HTMLCanvasElement) => {
 
 export const getFilesFromPDF = async (pdfFile: any) => {
 
+    let filesArray: any;
     const pdfURL = URL.createObjectURL(pdfFile);
-
-    const pdf = await PDFJS.getDocument(pdfURL).promise;
-
-    const filesArray = Array(pdf.numPages).fill(null).map(async (item, index) => {
-        const canvasPDF = document.createElement("canvas") as HTMLCanvasElement;
-        const context = canvasPDF.getContext("2d");
-
-        const pdfPage = await pdf.getPage(index + 1)
-        //
-        // const operatorList = await pdfPage.getOperatorList();
-        //
-        // const validObjectTypes = [
-        //     PDFJS.OPS.paintImageXObject, // 85
-        //     PDFJS.OPS.paintImageXObjectRepeat, // 88
-        //     PDFJS.OPS.paintJpegXObject //82
-        // ];
-
-        // console.log(await pdfPage.getOperatorList())
-        // console.log(PDFJS.OPS.paintJpegXObject)
-        // console.log(pdfPage)
-        // console.log(await pdfPage.objs)
-        const viewport = pdfPage.getViewport({scale: 0.7500001});
-
-        canvasPDF.height = Math.floor(viewport.height);
-        canvasPDF.width = Math.floor(viewport.width);
-        canvasPDF.dataset.type = "image/jpeg";
-
-        const renderContext: any = {
-            canvasContext: context,
-            viewport: viewport,
-        };
-
-        await pdfPage.render(renderContext).promise
-
-        return await makeFileFromCanvas(canvasPDF) as File
+    await onLoadPdfFile(pdfURL, async (data: any) => {
+        filesArray = data;
     })
 
-    return await Promise.all(filesArray)
+    return await filesArray;
+
+    // const pdf = await PDFJS.getDocument(pdfURL).promise;
+    //
+    // const filesArray = Array(pdf.numPages).fill(null).map(async (item, index) => {
+    //     const canvasPDF = document.createElement("canvas") as HTMLCanvasElement;
+    //     const context = canvasPDF.getContext("2d");
+    //
+    //     const pdfPage = await pdf.getPage(index + 1)
+    //     //
+    //     // const operatorList = await pdfPage.getOperatorList();
+    //     //
+    //     // const validObjectTypes = [
+    //     //     PDFJS.OPS.paintImageXObject, // 85
+    //     //     PDFJS.OPS.paintImageXObjectRepeat, // 88
+    //     //     PDFJS.OPS.paintJpegXObject //82
+    //     // ];
+    //
+    //     // console.log(await pdfPage.getOperatorList())
+    //     // console.log(PDFJS.OPS.paintJpegXObject)
+    //     // console.log(pdfPage)
+    //     // console.log(await pdfPage.objs)
+    //     const viewport = pdfPage.getViewport({scale: 0.7500001});
+    //
+    //     canvasPDF.height = Math.floor(viewport.height);
+    //     canvasPDF.width = Math.floor(viewport.width);
+    //     canvasPDF.dataset.type = "image/jpeg";
+    //
+    //     const renderContext: any = {
+    //         canvasContext: context,
+    //         viewport: viewport,
+    //     };
+    //
+    //     await pdfPage.render(renderContext).promise
+    //
+    //     return await makeFileFromCanvas(canvasPDF) as File
+    // })
+
+    // return await Promise.all(filesArray)
 }
 
-export const makeInitialFiles = async (fileList: FileList) =>{
+export const makeInitialFiles = async (fileList: FileList) => {
     let files: any[] = []
     for (const file of Array.from(fileList)) {
         if (file.type === "application/pdf") {

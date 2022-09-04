@@ -87,7 +87,7 @@ export default {
 			loading: true as null | boolean
 		})
 		const generateLink = (fileName: string) => {
-			return `https://firebasestorage.googleapis.com/v0/b/digital-proof-7e1ef.appspot.com/o/images%2F${fileName}?alt=media&token=c474eb67-fcd5-4067-bf40-cffad38bd780`
+			return `https://firebasestorage.googleapis.com/v0/b/digital-proof-7e1ef.appspot.com/o/images%2F${fileName}?alt=media`
 		}
 		
 		const getData = async () => {

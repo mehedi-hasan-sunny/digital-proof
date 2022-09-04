@@ -71,7 +71,7 @@ export default {
 						},
 						() => {
 							getDownloadURL(uploadProcess.snapshot.ref).then((url) => {
-								console.log(url)
+								// console.log(url)
 								
 							})
 						});
