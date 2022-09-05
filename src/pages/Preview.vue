@@ -87,7 +87,7 @@ export default {
 			loading: true as null | boolean
 		})
 		const generateLink = (fileName: string) => {
-			return `https://firebasestorage.googleapis.com/v0/b/digital-proof-7e1ef.appspot.com/o/images%2F${fileName}?alt=media`
+			return `https://firebasestorage.googleapis.com/v0/b/${import.meta.env.VITE_FIREBASE_STORAGE_BUCKET}/o/images%2F${fileName}?alt=media`
 		}
 		
 		const getData = async () => {
