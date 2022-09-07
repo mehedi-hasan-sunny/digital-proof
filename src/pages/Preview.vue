@@ -91,6 +91,7 @@ export default {
 		}
 		
 		const getData = async () => {
+			files.value = [];
 			const docRef = doc(database, "links/" + route.params.documentId);
 			const docData = await getDoc(docRef);
 			filesToBeDownloaded.value = await docData.data();
@@ -115,6 +116,7 @@ export default {
 												fileStats.width = image.width;
 												fileStats.height = image.height;
 												fileStats.loading = false;
+												URL.revokeObjectURL(image.src);
 											}
 										}
 										resolve(image)

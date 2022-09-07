@@ -36,9 +36,10 @@ export default {
 	},
 	computed: {
 		imageSize() {
+			const DPI = this.fileHeight > 96 || this.fileWidth > 96 ? 300 : 96;
 			return {
-				height: Number((this.fileHeight * 0.0104166667).toFixed(3)),
-				width: Number((this.fileWidth * 0.0104166667).toFixed(3))
+				height: Number((this.fileHeight / DPI).toFixed(3)),
+				width: Number((this.fileWidth / DPI).toFixed(3))
 			}
 		}
 	}

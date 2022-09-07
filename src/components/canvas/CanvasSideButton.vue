@@ -70,7 +70,7 @@ export default {
 			{
 				return drawnCanvas
 			}
-			return drawnCanvas.toDataURL(drawnCanvas.dataset.type ?? 'image/jpeg')
+			return drawnCanvas.toDataURL('image/jpeg')
 		}
 		
 		
@@ -78,6 +78,7 @@ export default {
 		const downloadPdf = async () => {
 			
 			let drawnCanvases: any;
+			let fromCanvas: boolean = false;
 			loadingButtons.downloadLoading = true;
 			if (route.name === "preview") {
 				drawnCanvases = await Promise.all(
@@ -90,7 +91,6 @@ export default {
 							return image
 						})
 				);
-				createPDF(drawnCanvases)
 				
 			} else {
 				drawnCanvases = await Promise.all(
@@ -101,8 +101,9 @@ export default {
 							return await canvasDrawer(file, null, canvas, null, canvasOptions.bleedSize, canvasOptions.showFoldedArea as YesOrNo);
 						})
 				);
-				createPDF(drawnCanvases, true)
+				fromCanvas = true;
 			}
+			createPDF(drawnCanvases, fromCanvas)
 			
 		}
 		
@@ -134,11 +135,10 @@ export default {
 				)
 			}
 			
-			const fileType = drawnCanvas.dataset.type.replace("image/", '').toUpperCase();
-			
+			// const fileType = drawnCanvas.dataset.type.replace("image/", '').toUpperCase();
 			doc.addImage(
 					downloadableItem(drawnCanvas),
-					fileType,
+					'JPEG',
 					0,
 					0,
 					drawnCanvas.width,
