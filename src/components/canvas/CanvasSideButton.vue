@@ -63,6 +63,7 @@ export default {
 			downloadLoading: false
 		})
 		
+		const APP_NAME = import.meta.env.VITE_APP_TITLE;
 		
 		
 		const downloadableItem = (drawnCanvas: HTMLCanvasElement | HTMLImageElement) =>{
@@ -110,8 +111,8 @@ export default {
 		const createPDF = (drawnCanvases: any, fromCanvas: boolean = false) =>{
 			const doc = new jsPDF({
 				orientation: drawnCanvases[0].width > drawnCanvases[0].height ? "l" : "p",
-				unit: 'px',
-				format: [drawnCanvases[0].width, drawnCanvases[0].height]
+				unit: 'in',
+				format: [drawnCanvases[0].width / 300, drawnCanvases[0].height / 300]
 			});
 			
 			drawnCanvases.forEach((drawnCanvas: any, index: number) => {
@@ -130,7 +131,7 @@ export default {
 		const addPagesToPdfDoc = (doc: jsPDF, drawnCanvas: HTMLImageElement | HTMLCanvasElement | any, index: number, downloadAt: number) =>{
 			if (index !== 0) {
 				doc.addPage(
-						[drawnCanvas.width, drawnCanvas.height],
+						[drawnCanvas.width  / 300, drawnCanvas.height  / 300],
 						drawnCanvas.width > drawnCanvas.height ? "l" : "p"
 				)
 			}
@@ -141,13 +142,13 @@ export default {
 					'JPEG',
 					0,
 					0,
-					drawnCanvas.width,
-					drawnCanvas.height,
+					drawnCanvas.width / 300,
+					drawnCanvas.height / 300,
 					drawnCanvas.title
 			);
 			
 			if(index === downloadAt){
-				doc.save(`digital-proof-${(new Date().getTime())}`);
+				doc.save(`${APP_NAME.replace(" ", '-').toLowerCase()}-${(new Date().getTime())}`);
 				loadingButtons.downloadLoading = false;
 			}
 		}

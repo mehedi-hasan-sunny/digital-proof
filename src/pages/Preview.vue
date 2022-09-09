@@ -116,7 +116,6 @@ export default {
 												fileStats.width = image.width;
 												fileStats.height = image.height;
 												fileStats.loading = false;
-												URL.revokeObjectURL(image.src);
 											}
 										}
 										resolve(image)

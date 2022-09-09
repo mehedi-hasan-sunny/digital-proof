@@ -49,7 +49,7 @@ export const canvasDrawer = (
 
 
                 // canvasEl.moveTo(10, 10);
-                const bleed = bleedSize * 96;
+                const bleed = bleedSize * 300;
 
                 ctx.font = `600 ${bleedSize === 0.125 ? 7 : 14}px Quicksand`;
                 ctx.fillStyle = "#00ab3c"
