@@ -18,7 +18,7 @@
 		<direction-button @click.prevent="slideAction('right')" direction="right"/>
 	
 	</div>
-	<Button class="w-80 mb-3" @click="uploadFiles" :disabled="spinner">Upload</Button>
+	<Button class="w-80 mb-3" @click="uploadFiles" :disabled="spinner">Get Shareable Link</Button>
 </template>
 
 <script lang="ts">

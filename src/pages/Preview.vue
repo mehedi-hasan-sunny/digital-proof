@@ -53,7 +53,7 @@
 </template>
 
 <script lang="ts">
-import {useRoute} from "vue-router";
+import {onBeforeRouteLeave, useRoute} from "vue-router";
 import {database} from "../firebase";
 import {getDoc} from "@firebase/firestore"
 import {doc} from "firebase/firestore";
@@ -63,7 +63,6 @@ import {computed, inject, reactive, ref} from "vue";
 import DirectionButton from "../elements/DirectionButton.vue";
 import CanvasSideButton from "../components/canvas/CanvasSideButton.vue";
 import NotFound from "./404.vue"
-import {makeFileFromCanvas} from "../helpers/canvasDrawer";
 import RoundButton from "../elements/RoundButton.vue";
 import Toaster from "../components/Toaster.vue";
 import Spinner from "../components/Spinner.vue";
@@ -78,6 +77,12 @@ export default {
 		const currentImageIndex = ref(0);
 		const imageLinks = ref([]) as any;
 		const files: any = inject("files");
+		
+		
+		onBeforeRouteLeave((to, from, next) => {
+			files.value = []
+			next()
+		})
 		
 		const fileStats = reactive({
 			img: {} as any,

@@ -9,7 +9,7 @@
 				:file-size="fileSize[index]"
 				:upload-percentage="progressCount"/>
 		
-		<Button class="mx-auto w-80 block" v-if="showDoneButton" @click="previewFiles">Done</Button>
+		<Button class="mx-auto w-80 block" v-if="showDoneButton" @click="previewFiles">Next</Button>
 	</div>
 </template>
 
@@ -29,6 +29,11 @@ export default {
 	setup() {
 		const router = useRouter();
 		const canvasFiles = inject("canvasFiles") as InjectFileListType;
+		
+		if(!canvasFiles.value.length){
+			router.push({name: "home"})
+		}
+		
 		const canvasFilesUploadProgress = reactive({
 			progress: [] as Array<number>,
 			fileName: [] as Array<string>,
@@ -53,13 +58,13 @@ export default {
 				console.error("Error adding document: ", e);
 			}
 		}
-		
+		console.log(canvasFiles.value)
 		if (canvasFiles.value.length) {
 			Array.from(canvasFiles.value).forEach((file, key) => {
 				canvasFilesUploadProgress.progress[key] = 0;
-				canvasFilesUploadProgress.fileName[key] = file.name;
+				canvasFilesUploadProgress.fileName[key] = new Date().getTime() +'_'+ file.name;
 				canvasFilesUploadProgress.fileSize[key] = bytesToSize(file.size);
-				const fileStorageRef = storageRef(storage, `images/${file.name}`);
+				const fileStorageRef = storageRef(storage, `images/${new Date().getTime() +'_'+file.name}`);
 				const uploadProcess = uploadBytesResumable(fileStorageRef, file);
 				
 				uploadProcess.on("state_changed",
@@ -74,6 +79,7 @@ export default {
 								// console.log(url)
 								
 							})
+							canvasFiles.value.splice(key, 1)
 						});
 			});
 			
