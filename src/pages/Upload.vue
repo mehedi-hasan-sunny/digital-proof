@@ -1,6 +1,6 @@
 <template>
 	<div class="w-5/12 mx-auto min-w-min">
-		<img src="../assets/Rectangle.svg" type="" class="mx-auto my-4 h-52"/>
+		<upload-animation :stopAnimation="stopAnimation"/>
 		
 		<file-upload-status
 				v-for="(progressCount, index) in progress"
@@ -15,20 +15,22 @@
 
 <script lang="ts">
 import FileUploadStatus from "../components/FileUploadStatus.vue";
-import {computed, inject, reactive, toRefs} from "vue";
+import {computed, inject, reactive, ref, toRefs} from "vue";
 import {ref as storageRef, uploadBytesResumable, getDownloadURL} from "@firebase/storage";
 import {storage, database} from "../firebase";
 import {InjectFileListType} from "../types";
 import {addDoc, collection, serverTimestamp} from "firebase/firestore";
 import Button from "../elements/Button.vue"
 import {useRouter} from "vue-router";
+import UploadAnimation from "../components/UploadAnimation.vue";
 
 export default {
 	name: "Upload",
-	components: {FileUploadStatus, Button},
+	components: {UploadAnimation, FileUploadStatus, Button},
 	setup() {
 		const router = useRouter();
 		const canvasFiles = inject("canvasFiles") as InjectFileListType;
+		const stopAnimation = ref(false);
 		
 		if(!canvasFiles.value.length){
 			router.push({name: "home"})
@@ -58,9 +60,11 @@ export default {
 				console.error("Error adding document: ", e);
 			}
 		}
-		console.log(canvasFiles.value)
+		
 		if (canvasFiles.value.length) {
 			Array.from(canvasFiles.value).forEach((file, key) => {
+				stopAnimation.value = false;
+				
 				canvasFilesUploadProgress.progress[key] = 0;
 				canvasFilesUploadProgress.fileName[key] = new Date().getTime() +'_'+ file.name;
 				canvasFilesUploadProgress.fileSize[key] = bytesToSize(file.size);
@@ -79,7 +83,9 @@ export default {
 								// console.log(url)
 								
 							})
-							canvasFiles.value.splice(key, 1)
+							canvasFiles.value.splice(key, 1);
+							stopAnimation.value = true;
+							
 						});
 			});
 			
@@ -104,7 +110,8 @@ export default {
 		return {
 			...toRefs(canvasFilesUploadProgress),
 			showDoneButton,
-			previewFiles
+			previewFiles,
+			stopAnimation
 		}
 	}
 }
